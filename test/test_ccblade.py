@@ -22,7 +22,6 @@ from ccblade.ccblade import CCBlade, CCAirfoil
 
 class TestNREL5MW(unittest.TestCase):
     def setUp(self):
-
         # geometry
         Rhub = 1.5
         Rtip = 63.0
@@ -122,11 +121,51 @@ class TestNREL5MW(unittest.TestCase):
         yaw = 0.0
 
         # create CCBlade object
-        self.rotor = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp=0.2, hubHt=90.0)
+        self.rotor = CCBlade(
+            r,
+            chord,
+            theta,
+            af,
+            Rhub,
+            Rtip,
+            B,
+            rho,
+            mu,
+            precone,
+            tilt,
+            yaw,
+            shearExp=0.2,
+            hubHt=90.0,
+        )
 
     def test_thrust_torque(self):
-
-        Uinf = np.array([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+        Uinf = np.array(
+            [
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+            ]
+        )
         Omega = np.array(
             [
                 6.972,
@@ -267,7 +306,9 @@ class TestNREL5MW(unittest.TestCase):
         m_rotor = 110.0  # kg
         g = 9.81
         tilt = 5 * math.pi / 180.0
-        Tref -= m_rotor * g * math.sin(tilt)  # remove weight of rotor that is included in reported results
+        Tref -= (
+            m_rotor * g * math.sin(tilt)
+        )  # remove weight of rotor that is included in reported results
 
         outputs, derivs = self.rotor.evaluate(Uinf, Omega, pitch)
         P, T, Q = [outputs[key] for key in ("P", "T", "Q")]
@@ -282,7 +323,9 @@ class TestNREL5MW(unittest.TestCase):
 
         idx = Uinf < 15
         np.testing.assert_allclose(Q[idx] / 1e6, Qref[idx] / 1e3, atol=0.15)
-        np.testing.assert_allclose(P[idx] / 1e6, Pref[idx] / 1e3, atol=0.2)  # within 0.2 of 1MW
+        np.testing.assert_allclose(
+            P[idx] / 1e6, Pref[idx] / 1e3, atol=0.2
+        )  # within 0.2 of 1MW
         np.testing.assert_allclose(T[idx] / 1e6, Tref[idx] / 1e3, atol=0.15)
 
 
