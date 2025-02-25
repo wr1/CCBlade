@@ -35,7 +35,7 @@ message('Python install dir: ' + py.get_install_dir())
 # Build the Fortran extension module (_bem)
 py.extension_module(
   '_bem',
-  'src/bem.f90',  # Source file for the Fortran extension
+  'ccblade/src/bem.f90',  # Source file for the Fortran extension
   dependencies: [py_dep],
   install: true,
   subdir: 'ccblade',  # Install _bem.so into site-packages/ccblade/
