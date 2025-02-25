@@ -23,9 +23,9 @@ endif
 # Python setup
 py_mod = import('python')
 if get_option('python_target') != ''
-  py = py_mod.find_installation(get_option('python_target'))
+  py = py_mod.find_installation(get_option('python_target'), pure: false)
 else
-  py = py_mod.find_installation('python3')  # Default to python3
+  py = py_mod.find_installation('python3', pure: false)  # Force platlib install
 endif
 py_dep = py.dependency()
 
@@ -51,8 +51,3 @@ py.install_sources(
   'ccblade/airfoilprep.py',  # Add other .py files as needed
   subdir: 'ccblade',  # Install into site-packages/ccblade/
 )
-
-# Optional: If there’s a ccblade subdirectory with more build logic
-# subdir('ccblade')  # Uncomment if additional build steps are defined there
-
-
