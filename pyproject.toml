@@ -3,6 +3,11 @@ requires = ["setuptools", "meson>=1.1", "numpy","ninja","wheel","meson-python>=0
 build-backend = "mesonpy" 
 # "setuptools.build_meta"
 
+[tool.meson-python.args]
+# Optional: Ensure Meson installs Python files
+install = ["--install-subdir=ccblade"]
+
+
 [project]
 name = "CCBlade"
 version = "1.3.1"

@@ -1,9 +1,7 @@
-# Much of this is from SciPy
-
+# Project definition
 project(
   'ccblade',
-  'c',
-# unnecessary metadata commented out until Meson supports PEP517 and installation with pip
+  'c', 'fortran',  # Include both C and Fortran languages
   license: 'Apache',
   meson_version: '>= 0.60',
   default_options: [
@@ -11,31 +9,48 @@ project(
   ],
 )
 
+# Get compilers
 cc = meson.get_compiler('c')
-add_languages('fortran', native: false)
 fc = meson.get_compiler('fortran')
 is_windows = host_machine.system() == 'windows'
 
-# We need -lm for all C code (assuming it uses math functions, which is safe to
-# assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
-# guaranteed to depend on it. For Fortran code, Meson already adds `-lm`.
-m_dep = cc.find_library('m', required : false)
+# Link math library (-lm) for C if available (safe assumption from SciPy)
+m_dep = cc.find_library('m', required: false)
 if m_dep.found()
-  add_project_link_arguments('-lm', language : 'c')
+  add_project_link_arguments('-lm', language: 'c')
 endif
 
-# https://mesonbuild.com/Python-module.html
-# Here we differentiate from the python used by meson, py3_command, and that python target, py3_target. This is useful
-# when cross compiling like on conda-forge
+# Python setup
 py_mod = import('python')
 if get_option('python_target') != ''
-  py3 = py_mod.find_installation(get_option('python_target'))
+  py = py_mod.find_installation(get_option('python_target'))
 else
-  py3 = py_mod.find_installation('python')
+  py = py_mod.find_installation('python3')  # Default to python3
 endif
-py3_dep = py3.dependency()
+py_dep = py.dependency()
 
-message(py3.path())
-message(py3.get_install_dir())
+message('Python executable: ' + py.path())
+message('Python install dir: ' + py.get_install_dir())
 
-subdir('ccblade')
+# Build the Fortran extension module (_bem)
+py.extension_module(
+  '_bem',
+  'src/bem.f90',  # Source file for the Fortran extension
+  dependencies: [py_dep],
+  install: true,
+  subdir: 'ccblade',  # Install _bem.so into site-packages/ccblade/
+)
+
+# Install Python package files
+py.install_sources(
+  # List all Python files explicitly
+  'ccblade/__init__.py',
+  'ccblade/ccblade.py',
+  'ccblade/geometry.py',  # Add other .py files as needed
+  subdir: 'ccblade',  # Install into site-packages/ccblade/
+)
+
+# Optional: If there’s a ccblade subdirectory with more build logic
+# subdir('ccblade')  # Uncomment if additional build steps are defined there
+
+
