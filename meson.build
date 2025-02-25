@@ -45,8 +45,7 @@ py.extension_module(
 py.install_sources(
   # List all Python files explicitly
   'ccblade/__init__.py',
-  'ccblade/ccblade.py',
-  'ccblade/geometry.py',  # Add other .py files as needed
+  'ccblade/ccblade.py',ccblade/csystem.py,ccblade/ccblade_component.py,ccblade/airfoilprep.py,  # Add other .py files as needed
   subdir: 'ccblade',  # Install into site-packages/ccblade/
 )
 
