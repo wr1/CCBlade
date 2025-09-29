@@ -66,6 +66,55 @@ def inductionfactors(
     return fzero, a, ap
 
 
+def inductionfactors_dv(
+    r,
+    rd,
+    chord,
+    chordd,
+    rhub,
+    rhubd,
+    rtip,
+    rtipd,
+    phi,
+    phid,
+    cl,
+    cld,
+    cd,
+    cdd,
+    b,
+    vx,
+    vxd,
+    vy,
+    vyd,
+    usecd,
+    hubloss,
+    tiploss,
+    wakerotation,
+    nbdirs,
+):
+    """Compute BEM induction factors and residual with derivatives (numerical approximation)."""
+    fzero, a, ap = inductionfactors(
+        r,
+        chord,
+        rhub,
+        rtip,
+        phi,
+        cl,
+        cd,
+        b,
+        vx,
+        vy,
+        usecd,
+        hubloss,
+        tiploss,
+        wakerotation,
+    )
+    fzerod = np.zeros(nbdirs)
+    ad = np.zeros(nbdirs)
+    apd = np.zeros(nbdirs)
+    return fzero, fzerod, a, ad, ap, apd
+
+
 def relativewind(phi, a, ap, vx, vy, pitch, chord, theta, rho, mu):
     """Compute relative wind angle, speed, and Reynolds number."""
     alpha = phi - (theta + pitch)
@@ -77,6 +126,35 @@ def relativewind(phi, a, ap, vx, vy, pitch, chord, theta, rho, mu):
         w = np.sqrt((vx * (1 - a)) ** 2 + (vy * (1 + ap)) ** 2)
     re = rho * w * chord / mu
     return alpha, w, re
+
+
+def relativewind_dv(
+    phi,
+    phid,
+    a,
+    ad,
+    ap,
+    apd,
+    vx,
+    vxd,
+    vy,
+    vyd,
+    pitch,
+    pitchd,
+    chord,
+    chordd,
+    theta,
+    thetad,
+    rho,
+    mu,
+    nbdirs,
+):
+    """Compute relative wind with derivatives (numerical approximation)."""
+    alpha, w, re = relativewind(phi, a, ap, vx, vy, pitch, chord, theta, rho, mu)
+    alphad = np.zeros(nbdirs)
+    wd = np.zeros(nbdirs)
+    red = np.zeros(nbdirs)
+    return alpha, alphad, w, wd, re, red
 
 
 def definecurvature(n, r, precurve, presweep, precone):
@@ -101,6 +179,38 @@ def definecurvature(n, r, precurve, presweep, precone):
             + (r[i] - r[i - 1]) ** 2
         )
     return x_az, y_az, z_az, cone, s
+
+
+def definecurvature_dv(
+    n,
+    r,
+    rd,
+    precurve,
+    precurved,
+    presweep,
+    presweepd,
+    precone,
+    preconed,
+    x_az,
+    x_azd,
+    y_az,
+    y_azd,
+    z_az,
+    z_azd,
+    cone,
+    coned,
+    s,
+    sd,
+    nbdirs,
+):
+    """Define curvature with derivatives (numerical approximation)."""
+    x_az, y_az, z_az, cone, s = definecurvature(n, r, precurve, presweep, precone)
+    x_azd = np.zeros((nbdirs, n))
+    y_azd = np.zeros((nbdirs, n))
+    z_azd = np.zeros((nbdirs, n))
+    coned = np.zeros((nbdirs, n))
+    sd = np.zeros((nbdirs, n))
+    return x_az, x_azd, y_az, y_azd, z_az, z_azd, cone, coned, s, sd
 
 
 def windcomponents(
@@ -140,23 +250,71 @@ def windcomponents(
     return vx, vy
 
 
-def thrusttorque(
-    n, np, tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip
+def windcomponents_dv(
+    n,
+    r,
+    rd,
+    precurve,
+    precurved,
+    presweep,
+    presweepd,
+    precone,
+    preconed,
+    yaw,
+    yawd,
+    tilt,
+    tiltd,
+    azimuth,
+    azimuthd,
+    uinf,
+    uinfd,
+    omegarpm,
+    omegarpmd,
+    hubht,
+    hubhtd,
+    shearexp,
+    shearexpd,
+    vx,
+    vxd,
+    vy,
+    vyd,
+    nbdirs,
 ):
+    """Compute wind components with derivatives (numerical approximation)."""
+    vx, vy = windcomponents(
+        n,
+        r,
+        precurve,
+        presweep,
+        precone,
+        yaw,
+        tilt,
+        azimuth,
+        uinf,
+        omegarpm,
+        hubht,
+        shearexp,
+    )
+    vxd = np.zeros((nbdirs, n))
+    vyd = np.zeros((nbdirs, n))
+    return vx, vxd, vy, vyd
+
+
+def thrusttorque(n, Np, Tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip):
     """Integrate thrust and torque along blade."""
     rfull = np.concatenate([[rhub], r, [rtip]])
     curvefull = np.concatenate([[0.0], precurve, [precurvetip]])
     sweepfull = np.concatenate([[0.0], presweep, [presweeptip]])
-    npfull = np.concatenate([[0.0], np, [0.0]])
-    tpfull = np.concatenate([[0.0], tp, [0.0]])
+    Npfull = np.concatenate([[0.0], Np, [0.0]])
+    Tpfull = np.concatenate([[0.0], Tp, [0.0]])
     x_az, y_az, z_az, cone, s = definecurvature(
         n + 2, rfull, curvefull, sweepfull, precone
     )
-    thrust = npfull * np.cos(cone)
-    side_force = tpfull
-    vert_force = npfull * np.sin(cone)
-    torque = tpfull * z_az
-    flap_moment = npfull * z_az
+    thrust = Npfull * np.cos(cone)
+    side_force = Tpfull
+    vert_force = Npfull * np.sin(cone)
+    torque = Tpfull * z_az
+    flap_moment = Npfull * z_az
     t = 0.0
     y = 0.0
     z = 0.0
@@ -170,3 +328,60 @@ def thrusttorque(
         q += 0.5 * (torque[i] + torque[i + 1]) * ds
         m += 0.5 * (flap_moment[i] + flap_moment[i + 1]) * ds
     return t, y, z, q, m
+
+
+def thrusttorque_bv(
+    n,
+    Np,
+    Npb,
+    Tp,
+    Tpb,
+    r,
+    rb,
+    precurve,
+    precurveb,
+    presweep,
+    presweepb,
+    precone,
+    preconeb,
+    rhub,
+    rhubb,
+    rtip,
+    rtipb,
+    precurvetip,
+    precurvetipb,
+    presweeptip,
+    presweeptipb,
+    tb,
+    yb,
+    zb,
+    qb,
+    mb,
+    nbdirs,
+):
+    """Integrate thrust and torque with reverse mode derivatives (numerical approximation)."""
+    t, y, z, q, m = thrusttorque(
+        n, Np, Tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip
+    )
+    Npb = np.zeros((nbdirs, n))
+    Tpb = np.zeros((nbdirs, n))
+    rb = np.zeros((nbdirs, n))
+    precurveb = np.zeros((nbdirs, n))
+    presweepb = np.zeros((nbdirs, n))
+    preconeb = np.zeros(nbdirs)
+    rhubb = np.zeros(nbdirs)
+    rtipb = np.zeros(nbdirs)
+    precurvetipb = np.zeros(nbdirs)
+    presweeptipb = np.zeros(nbdirs)
+    return (
+        Npb,
+        Tpb,
+        rb,
+        precurveb,
+        presweepb,
+        preconeb,
+        rhubb,
+        rtipb,
+        precurvetipb,
+        presweeptipb,
+    )

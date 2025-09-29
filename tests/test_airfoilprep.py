@@ -2,7 +2,7 @@ import unittest
 from math import pi
 
 import numpy as np
-from ccblade.airfoilprep import Polar, Airfoil
+from ccblade.airfoil.airfoil import Polar, Airfoil
 
 
 class TestBlend(unittest.TestCase):
@@ -2621,9 +2621,4 @@ def suite():
 
 
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

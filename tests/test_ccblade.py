@@ -17,7 +17,8 @@ import unittest
 from os import path
 
 import numpy as np
-from ccblade.ccblade import CCBlade, CCAirfoil
+from ccblade.core.ccblade import CCBlade
+from ccblade.airfoil.airfoil import CCAirfoil
 
 
 class TestNREL5MW(unittest.TestCase):

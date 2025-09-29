@@ -1,10 +1,14 @@
+#!/usr/bin/env python
+"""Command line interface for CCBlade airfoil preprocessing."""
+
 import os
 from argparse import ArgumentParser, RawTextHelpFormatter
-from ..utils.airfoilprep import Airfoil
+
+from ..airfoil.airfoil import Airfoil
 
 
 def main():
-    """CLI entry point for airfoilprep."""
+    """Main CLI function for airfoil preprocessing."""
     # setup command line arguments
     parser = ArgumentParser(
         formatter_class=RawTextHelpFormatter,
@@ -12,36 +16,39 @@ def main():
     )
     parser.add_argument("src_file", type=str, help="source file")
     parser.add_argument(
-        "--stall3D",
         "-s",
+        "--stall3D",
         type=str,
         nargs=3,
         metavar=("r/R", "c/r", "tsr"),
         help="2D data -> apply 3D corrections",
     )
     parser.add_argument(
-        "--extrap",
         "-e",
+        "--extrap",
         type=str,
         nargs=1,
         metavar=("cdmax"),
         help="3D data -> high alpha extrapolations",
     )
     parser.add_argument(
-        "--blend",
         "-b",
+        "--blend",
         type=str,
         nargs=2,
         metavar=("otherfile", "weight"),
         help="blend 2 files weight 0: sourcefile, weight 1: otherfile",
     )
-    parser.add_argument("--out", "-o", type=str, help="output file")
+    parser.add_argument("-o", "--out", type=str, help="output file")
     parser.add_argument(
-        "--plot", "-p", action="store_true", help="plot data using matplotlib"
+        "-p",
+        "--plot",
+        action="store_true",
+        help="plot data using matplotlib"
     )
     parser.add_argument(
-        "--common",
         "-c",
+        "--common",
         action="store_true",
         help="interpolate the data at different Reynolds numbers to a common set of angles of attack",
     )
@@ -70,6 +77,8 @@ def main():
 
         if args.plot:
             for p, p3D in zip(af.polars, af3D.polars):
+                # plt.figure(figsize=(6.0, 2.6))
+                # plt.subplot(121)
                 plt.figure()
                 plt.plot(p.alpha, p.cl, "k", label="2D")
                 plt.plot(p3D.alpha, p3D.cl, "r", label="3D")
@@ -77,12 +86,16 @@ def main():
                 plt.ylabel("lift coefficient")
                 plt.legend(loc="lower right")
 
+                # plt.subplot(122)
                 plt.figure()
                 plt.plot(p.alpha, p.cd, "k", label="2D")
                 plt.plot(p3D.alpha, p3D.cd, "r", label="3D")
                 plt.xlabel("angle of attack (deg)")
                 plt.ylabel("drag coefficient")
                 plt.legend(loc="upper center")
+
+                # plt.tight_layout()
+                # plt.savefig('/Users/sning/Dropbox/NREL/SysEng/airfoilpreppy/docs/images/stall3d.pdf')
 
             plt.show()
 
@@ -102,6 +115,8 @@ def main():
 
         if args.plot:
             for p, pext in zip(af.polars, afext.polars):
+                # plt.figure(figsize=(6.0, 2.6))
+                # plt.subplot(121)
                 plt.figure()
                 (p1,) = plt.plot(pext.alpha, pext.cl, "r")
                 (p2,) = plt.plot(p.alpha, p.cl, "k")
@@ -109,6 +124,7 @@ def main():
                 plt.ylabel("lift coefficient")
                 plt.legend([p2, p1], ["orig", "extrap"], loc="upper right")
 
+                # plt.subplot(122)
                 plt.figure()
                 (p1,) = plt.plot(pext.alpha, pext.cd, "r")
                 (p2,) = plt.plot(p.alpha, p.cd, "k")
@@ -122,6 +138,9 @@ def main():
                 plt.xlabel("angle of attack (deg)")
                 plt.ylabel("moment coefficient")
                 plt.legend([p2, p1], ["orig", "extrap"], loc="upper right")
+
+                # plt.tight_layout()
+                # plt.savefig('/Users/sning/Dropbox/NREL/SysEng/airfoilpreppy/docs/images/extrap.pdf')
 
             plt.show()
 
