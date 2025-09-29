@@ -1138,7 +1138,6 @@ class Test3DStall(unittest.TestCase):
             0.696,
             0.987,
         ]
-
         cm_test = [
             [-0.0037],
             [-0.0044],

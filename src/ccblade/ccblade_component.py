@@ -1,9 +1,19 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+ccblade_component.py
+
+Created by Andrew Ning on 2/21/2012.
+Copyright (c) NREL. All rights reserved.
+"""
+
+from __future__ import print_function
 import numpy as np
 from openmdao.api import ExplicitComponent
 from scipy.interpolate import PchipInterpolator
 
-from ccblade.core.airfoil import CCAirfoil
-from ccblade.core.ccblade import CCBlade
+from ccblade.ccblade import CCAirfoil
+from ccblade.airfoilprep import Airfoil
 from ccblade.utils.csystem import DirectionVector
 
 cosd = lambda x: np.cos(np.deg2rad(x))

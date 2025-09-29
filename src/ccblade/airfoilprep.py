@@ -891,7 +891,8 @@ class Airfoil(object):
             )
             f.write(
                 "{0:<10f}\t{1:40}".format(
-                    param[3], "Cn slope for zero lift for linear Cn curve (1/rad)"
+                    param[3],
+                    "Cn slope for zero lift for linear Cn curve (1/rad)"
                 )
             )
             f.write(

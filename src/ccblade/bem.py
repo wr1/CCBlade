@@ -300,23 +300,21 @@ def windcomponents_dv(
     return vx, vxd, vy, vyd
 
 
-def thrusttorque(
-    n, np, tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip
-):
+def thrusttorque(n, Np, Tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip):
     """Integrate thrust and torque along blade."""
     rfull = np.concatenate([[rhub], r, [rtip]])
     curvefull = np.concatenate([[0.0], precurve, [precurvetip]])
     sweepfull = np.concatenate([[0.0], presweep, [presweeptip]])
-    npfull = np.concatenate([[0.0], np, [0.0]])
-    tpfull = np.concatenate([[0.0], tp, [0.0]])
+    Npfull = np.concatenate([[0.0], Np, [0.0]])
+    Tpfull = np.concatenate([[0.0], Tp, [0.0]])
     x_az, y_az, z_az, cone, s = definecurvature(
         n + 2, rfull, curvefull, sweepfull, precone
     )
-    thrust = npfull * np.cos(cone)
-    side_force = tpfull
-    vert_force = npfull * np.sin(cone)
-    torque = tpfull * z_az
-    flap_moment = npfull * z_az
+    thrust = Npfull * np.cos(cone)
+    side_force = Tpfull
+    vert_force = Npfull * np.sin(cone)
+    torque = Tpfull * z_az
+    flap_moment = Npfull * z_az
     t = 0.0
     y = 0.0
     z = 0.0
@@ -334,10 +332,10 @@ def thrusttorque(
 
 def thrusttorque_bv(
     n,
-    np,
-    npb,
-    tp,
-    tpb,
+    Np,
+    Npb,
+    Tp,
+    Tpb,
     r,
     rb,
     precurve,
@@ -363,10 +361,10 @@ def thrusttorque_bv(
 ):
     """Integrate thrust and torque with reverse mode derivatives (numerical approximation)."""
     t, y, z, q, m = thrusttorque(
-        n, np, tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip
+        n, Np, Tp, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip
     )
-    npb = np.zeros((nbdirs, n))
-    tpb = np.zeros((nbdirs, n))
+    Npb = np.zeros((nbdirs, n))
+    Tpb = np.zeros((nbdirs, n))
     rb = np.zeros((nbdirs, n))
     precurveb = np.zeros((nbdirs, n))
     presweepb = np.zeros((nbdirs, n))
@@ -376,8 +374,8 @@ def thrusttorque_bv(
     precurvetipb = np.zeros(nbdirs)
     presweeptipb = np.zeros(nbdirs)
     return (
-        npb,
-        tpb,
+        Npb,
+        Tpb,
         rb,
         precurveb,
         presweepb,

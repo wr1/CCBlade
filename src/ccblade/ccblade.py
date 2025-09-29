@@ -538,7 +538,7 @@ class CCBlade(object):
             nacelle :ref:`yaw angle<wind_yaw_coord>`
         shearExp : float, optional
             shear exponent for a power-law wind profile across hub
-        hubHt : float, optional
+        hubHt : float, optional (m)
             hub height used for power-law wind profile.
             U = Uref*(z/hubHt)**shearExp
         nSector : int, optional
@@ -2088,8 +2088,8 @@ class CCBlade(object):
         dZ["dpitch"] = np.diag(dZ_ds[:, 11])
         dQ["dpitch"] = np.diag(dQ_ds[:, 11])
         dMy["dpitch"] = np.diag(dMy_ds[:, 11])
-        dMz["dpitch"] = np.diag(dMz_ds[:, 11])
-        dMb["dpitch"] = np.diag(dMb_ds[:, 11])
+        dMz["dpitch"] = dMz_ds[:, 11]
+        dMb["dpitch"] = dMb_ds[:, 11]
         dP["dpitch"] = np.diag(dP_ds[:, 11])
 
         # npts x n
