@@ -14,12 +14,12 @@ sys.path.append(os.path.expanduser("~") + "/Dropbox/NREL/CCBlade/src")
 
 # 1 ---------
 
-import numpy as np
 from math import pi
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 from ccblade import CCAirfoil, CCBlade
-
 
 # geometry
 Rhub = 1.5
@@ -226,7 +226,7 @@ CQ = outputs["CQ"]
 
 plt.figure()
 plt.plot(tsr, CP)
-plt.xlabel("$\lambda$")
+plt.xlabel(r"$\lambda$")
 plt.ylabel("$c_p$")
 plt.show()
 # 7 ----------

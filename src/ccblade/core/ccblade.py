@@ -1,46 +1,21 @@
 #!/usr/bin/env python
-# encoding: utf-8
 """
-ccblade.py
-Created by S. Andrew Ning on 5/11/2012
-Copyright (c) NREL. All rights reserved.
-A blade element momentum method using theory detailed in [1]_.  Has the
-advantages of guaranteed convergence and at a superlinear rate, and
-continuously differentiable output.
-.. [1] S. Andrew Ning, "A simple solution method for the blade element momentum
-equations with guaranteed convergence", Wind Energy, 2013.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-   http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+CCBlade: Blade element momentum aerodynamics for wind turbines
 """
 
-import os
-import warnings
-import multiprocessing as mp
 import logging
+import warnings
 
 import numpy as np
 from scipy.optimize import brentq
-from scipy.interpolate import RectBivariateSpline, bisplev
 
 from .bem import *
 from .datamodels import BladeLoads, RotorOutputs
-from ..airfoil.airfoil import Airfoil
 
 logger = logging.getLogger(__name__)
 
-# ------------------
-#  Main Class: CCBlade
-# ------------------
 
-
-class CCBlade(object):
+class CCBlade:
     """CCBlade class for blade element momentum analysis."""
 
     def __init__(
@@ -86,9 +61,7 @@ class CCBlade(object):
         self.yaw = np.deg2rad(yaw).item()
         self.shearExp = shearExp
         self.hubHt = hubHt
-        self.bemoptions = dict(
-            usecd=usecd, tiploss=tiploss, hubloss=hubloss, wakerotation=wakerotation
-        )
+        self.bemoptions = {"usecd": usecd, "tiploss": tiploss, "hubloss": hubloss, "wakerotation": wakerotation}
         self.iterRe = iterRe
 
         # check if no precurve / presweep
@@ -122,9 +95,7 @@ class CCBlade(object):
         # if self.precurveTip != 0 and self.precone != 0.0:
         # print('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
 
-        self.rotorR = Rtip * np.cos(self.precone) + self.precurveTip * np.sin(
-            self.precone
-        )
+        self.rotorR = Rtip * np.cos(self.precone) + self.precurveTip * np.sin(self.precone)
 
         # azimuthal discretization
         if self.tilt == 0.0 and self.yaw == 0.0 and self.shearExp == 0.0:
@@ -142,7 +113,7 @@ class CCBlade(object):
         axial_induction = 0.0
         tangential_induction = 0.0
 
-        for i in range(self.iterRe):
+        for _i in range(self.iterRe):
             alpha, W, Re = relativewind(
                 phi, axial_induction, tangential_induction, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu
             )
@@ -173,7 +144,7 @@ class CCBlade(object):
         """Run inverse BEM."""
         axial_induction = 0.0
         tangential_induction = 0.0
-        for i in range(self.iterRe):
+        for _i in range(self.iterRe):
             fzero, axial_induction, tangential_induction = inductionfactors(
                 r,
                 chord,
@@ -278,9 +249,7 @@ class CCBlade(object):
         azimuth = np.rad2deg(azimuth)
 
         # component of velocity at each radial station
-        Vx, Vy = self.__windComponents(
-            Uinf, Omega, azimuth
-        )
+        Vx, Vy = self.__windComponents(Uinf, Omega, azimuth)
 
         # initialize
         n = len(self.r)
@@ -297,7 +266,7 @@ class CCBlade(object):
         Re = np.zeros(n)
         W = np.zeros(n)
 
-        if self.inverse_analysis == True:
+        if self.inverse_analysis:
             errf = self.__errorFunction_inverse
             self.theta = np.zeros_like(self.r)
         else:
@@ -307,7 +276,7 @@ class CCBlade(object):
         # ---------------- loop across blade ------------------
         for i in range(n):
             # index dependent arguments
-            if self.inverse_analysis == True:
+            if self.inverse_analysis:
                 args = (
                     self.r[i],
                     self.chord[i],
@@ -338,9 +307,7 @@ class CCBlade(object):
                 phi_lower = epsilon
                 phi_upper = np.pi / 2
 
-                if (
-                    errf(phi_lower, *args) * errf(phi_upper, *args) > 0
-                ):  # an uncommon but possible case
+                if errf(phi_lower, *args) * errf(phi_upper, *args) > 0:  # an uncommon but possible case
                     if errf(-np.pi / 4, *args) < 0 and errf(-epsilon, *args) > 0:
                         phi_lower = -np.pi / 4
                         phi_upper = -epsilon
@@ -352,12 +319,12 @@ class CCBlade(object):
                     phi_star = brentq(errf, phi_lower, phi_upper, args=args)
 
                 except ValueError:
-                    warnings.warn("error.  check input values.")
+                    warnings.warn("error.  check input values.", stacklevel=2)
                     phi_star = 0.0
 
                 # ----------------------------------------------------------------
 
-            if self.inverse_analysis == True:
+            if self.inverse_analysis:
                 self.theta[i] = phi_star - self.alpha[i] - self.pitch  # rad
                 args = (
                     self.r[i],
@@ -447,9 +414,7 @@ class CCBlade(object):
                 sa = np.sin(azimuth)
 
                 # contribution from this azimuthal location
-                loads = self.distributedAeroLoads(
-                    Uinf[i], Omega[i], pitch[i], np.rad2deg(azimuth)
-                )
+                loads = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], np.rad2deg(azimuth))
                 Np, Tp, W = (loads.Np, loads.Tp, loads.W)
 
                 Tsub, Ysub, Zsub, Qsub, Msub = thrusttorque(len(self.r), Np, Tp, *args)

@@ -1,17 +1,20 @@
 # just to temporarily change PYTHONPATH without installing
-import sys
+import logging
 import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 basepath = os.path.join(os.path.dirname(__file__), "5MW_AFFiles")
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 from ccblade import CCAirfoil, CCBlade
-
 
 # geometry
 Rhub = 1.5
@@ -152,4 +155,4 @@ plt.plot(precurve, r, "k")
 plt.plot(precurve, -r, "k")
 plt.axis("equal")
 plt.grid()
-plt.show()
+plt.savefig('rotorshape.png')

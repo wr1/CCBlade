@@ -1,37 +1,24 @@
-#!/usr/bin/env python
-"""
-ccairfoil.py
-
-Created by Andrew Ning on 2012-04-16.
-Copyright (c) NREL. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-import multiprocessing as mp
-import os
+import logging
 
 import numpy as np
 from scipy.interpolate import RectBivariateSpline, bisplev
 
 from .airfoil import Airfoil
 
+logger = logging.getLogger(__name__)
 
-class CCAirfoil(object):
+
+class CCAirfoil:
     """CCAirfoil class for spline evaluation."""
 
-    def __init__(self, alpha, Re, cl, cd, cm=[], x=[], y=[], AFName="DEFAULTAF"):
+    def __init__(self, alpha, Re, cl, cd, cm=None, x=None, y=None, AFName="DEFAULTAF"):
         """Constructor for CCAirfoil."""
+        if y is None:
+            y = []
+        if x is None:
+            x = []
+        if cm is None:
+            cm = []
         alpha = np.deg2rad(alpha)
         self.x = x
         self.y = y
@@ -70,6 +57,7 @@ class CCAirfoil(object):
     @classmethod
     def initFromAerodynFile(cls, aerodynFile):
         """Construct from AeroDyn file."""
+        logger.info(f"Loading airfoil file: {aerodynFile}")
         af = Airfoil.initFromAerodynFile(aerodynFile)
         alpha, Re, cl, cd, cm = af.createDataGrid()
         return cls(alpha, Re, cl, cd, cm=cm)
@@ -118,7 +106,7 @@ class CCAirfoil(object):
         else:
             alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
             cl = [self.cl_spline.ev(aoa, Re) for aoa in alpha]
-            cd = [self.cd_spline.ev(aoa, Re) for aoa in alpha]
+            [self.cd_spline.ev(aoa, Re) for aoa in alpha]
 
             i_stall = np.argmax(cl)
             alpha_stall = alpha[i_stall]

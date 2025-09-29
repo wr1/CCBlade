@@ -1,7 +1,7 @@
 # just to temporarily change PYTHONPATH without installing
-import sys
-import os
 import logging
+import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -11,15 +11,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# 1 ---------
-
-import numpy as np
 from math import pi
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 from ccblade import CCAirfoil, CCBlade
 from ccblade.airfoil.airfoil import Airfoil
-
 
 # geometry
 Rhub = 1.5
@@ -173,14 +171,15 @@ azimuth = 0.0
 
 # evaluate distributed loads
 loads = rotor.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
-Np = loads["Np"]
-Tp = loads["Tp"]
+Np = loads.Np
+Tp = loads.Tp
 
 # 4 ----------
 
 # 5 ----------
 
 # plot
+plt.figure()
 rstar = (r - Rhub) / (Rtip - Rhub)
 
 # append zero at root and tip
@@ -202,14 +201,14 @@ logger.info(f"Saved loads plot to {filename}")
 # 6 ----------
 
 outputs = rotor.evaluate([Uinf], [Omega], [pitch])
-P = outputs["P"]
-T = outputs["T"]
-Q = outputs["Q"]
+P = outputs.P
+T = outputs.T
+Q = outputs.Q
 
 outputs = rotor.evaluate([Uinf], [Omega], [pitch], coefficients=True)
-CP = outputs["CP"]
-CT = outputs["CT"]
-CQ = outputs["CQ"]
+CP = outputs.CP
+CT = outputs.CT
+CQ = outputs.CQ
 
 logger.info(f"CP = {CP}")
 logger.info(f"CT = {CT}")
@@ -226,9 +225,9 @@ Uinf = Omega * pi / 30.0 * Rtip / tsr
 pitch = np.zeros_like(tsr)
 
 outputs = rotor.evaluate(Uinf, Omega, pitch, coefficients=True)
-CP = outputs["CP"]
-CT = outputs["CT"]
-CQ = outputs["CQ"]
+CP = outputs.CP
+CT = outputs.CT
+CQ = outputs.CQ
 
 
 plt.figure()
