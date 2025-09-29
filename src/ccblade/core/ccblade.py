@@ -37,6 +37,8 @@ from ..airfoil.airfoil import Airfoil
 
 
 class CCBlade(object):
+    """CCBlade class for blade element momentum analysis."""
+
     def __init__(
         self,
         r,
@@ -64,67 +66,7 @@ class CCBlade(object):
         usecd=True,
         iterRe=1,
     ):
-        """Constructor for aerodynamic rotor analysis
-
-        Parameters
-        ----------
-        r : array_like (m)
-            locations defining the blade along z-axis of :ref:`blade coordinate system <azimuth_blade_coord>`
-            (values should be increasing).
-        chord : array_like (m)
-            corresponding chord length at each section
-        theta : array_like (deg)
-            corresponding :ref:`twist angle <blade_airfoil_coord>` at each section---
-            positive twist decreases angle of attack.
-        Rhub : float (m)
-            location of hub
-        Rtip : float (m)
-            location of tip
-        B : int, optional
-            number of blades
-        rho : float, optional (kg/m^3)
-            freestream fluid density
-        mu : float, optional (kg/m/s)
-            dynamic viscosity of fluid
-        precone : float, optional (deg)
-            :ref:`hub precone angle <azimuth_blade_coord>`
-        tilt : float, optional (deg)
-            nacelle :ref:`tilt angle <yaw_hub_coord>`
-        yaw : float, optional (deg)
-            nacelle :ref:`yaw angle<wind_yaw_coord>`
-        shearExp : float, optional
-            shear exponent for a power-law wind profile across hub
-        hubHt : float, optional (m)
-            hub height used for power-law wind profile.
-            U = Uref*(z/hubHt)**shearExp
-        nSector : int, optional
-            number of azimuthal sectors to descretize aerodynamic calculation.  automatically set to
-            ``1`` if tilt, yaw, and shearExp are all 0.0.  Otherwise set to a minimum of 4.
-        precurve : array_like, optional (m)
-            location of blade pitch axis in x-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
-        precurveTip : float, optional (m)
-            location of blade pitch axis in x-direction at the tip (analogous to Rtip)
-        presweep : array_like, optional (m)
-            location of blade pitch axis in y-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
-        presweepTip : float, optional (m)
-            location of blade pitch axis in y-direction at the tip (analogous to Rtip)
-        tiploss : boolean, optional
-            if True, include Prandtl tip loss model
-        hubloss : boolean, optional
-            if True, include Prandtl hub loss model
-        wakerotation : boolean, optional
-            if True, include effect of wake rotation (i.e., tangential induction factor is nonzero)
-        usecd : boolean, optional
-            If True, use drag coefficient in computing induction factors
-            (always used in evaluating distributed loads from the induction factors).
-            Note that the default implementation may fail at certain points if drag is not included
-            (see Section 4.2 in :cite:`Ning2013A-simple-soluti`).  This can be worked around, but has
-            not been implemented.
-        iterRe : int, optional
-            The number of iterations to converge Reynolds number.  Generally iterRe=1 is sufficient,
-            but for high accuracy in Reynolds number effects, iterRe=2 iterations can be used.  More than that
-            should not be necessary.  Gradients have only been implemented for the case iterRe=1.
-        """
+        """Constructor for aerodynamic rotor analysis."""
         r = np.array(r)
         self.r = r.copy()
         self.chord = np.array(chord)
@@ -192,18 +134,17 @@ class CCBlade(object):
 
     # residual
     def __runBEM(self, phi, r, chord, theta, af, Vx, Vy):
-        """residual of BEM method and other corresponding variables"""
-
-        a = 0.0
-        ap = 0.0
+        """Run BEM iteration."""
+        axial_induction = 0.0
+        tangential_induction = 0.0
 
         for i in range(self.iterRe):
             alpha, W, Re = relativewind(
-                phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu
+                phi, axial_induction, tangential_induction, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu
             )
             cl, cd = af.evaluate(alpha, Re)
 
-            fzero, a, ap = inductionfactors(
+            fzero, axial_induction, tangential_induction = inductionfactors(
                 r,
                 chord,
                 self.Rhub,
@@ -217,24 +158,19 @@ class CCBlade(object):
                 **self.bemoptions,
             )
 
-        return fzero, a, ap, cl, cd
+        return fzero, axial_induction, tangential_induction, cl, cd
 
     def __errorFunction(self, phi, r, chord, theta, af, Vx, Vy):
-        """strip other outputs leaving only residual for Brent's method
-        Standard use case, geometry is known
-        """
-
-        fzero, a, ap, _, _ = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
-
+        """Error function for BEM."""
+        fzero, axial_induction, tangential_induction, _, _ = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
         return fzero
 
     def __runBEM_inverse(self, phi, r, chord, cl, cd, af, Vx, Vy):
-        """residual of BEM method and other corresponding variables"""
-
-        a = 0.0
-        ap = 0.0
+        """Run inverse BEM."""
+        axial_induction = 0.0
+        tangential_induction = 0.0
         for i in range(self.iterRe):
-            fzero, a, ap = inductionfactors(
+            fzero, axial_induction, tangential_induction = inductionfactors(
                 r,
                 chord,
                 self.Rhub,
@@ -248,31 +184,27 @@ class CCBlade(object):
                 **self.bemoptions,
             )
 
-        return fzero, a, ap
+        return fzero, axial_induction, tangential_induction
 
     def __errorFunction_inverse(self, phi, r, chord, cl, cd, af, Vx, Vy):
-        """strip other outputs leaving only residual for Brent's method
-        Parametric optimization use case, desired Cl/Cd is known, solve for twist
-        """
-
-        fzero, a, ap = self.__runBEM_inverse(phi, r, chord, cl, cd, af, Vx, Vy)
-
+        """Error function for inverse BEM."""
+        fzero, axial_induction, tangential_induction = self.__runBEM_inverse(phi, r, chord, cl, cd, af, Vx, Vy)
         return fzero
 
     def __loads(self, phi, rotating, r, chord, theta, af, Vx, Vy):
-        """normal and tangential loads at one section (and optionally derivatives)"""
+        """Compute loads at section."""
         if Vx != 0.0 and Vy != 0.0:
             cphi = np.cos(phi)
             sphi = np.sin(phi)
 
             if rotating:
-                _, a, ap, cl, cd = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
+                _, axial_induction, tangential_induction, cl, cd = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
             else:
-                a = 0.0
-                ap = 0.0
+                axial_induction = 0.0
+                tangential_induction = 0.0
 
             alpha_rad, W, Re = relativewind(
-                phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu
+                phi, axial_induction, tangential_induction, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu
             )
             if not rotating:
                 cl, cd = af.evaluate(alpha_rad, Re)
@@ -287,8 +219,8 @@ class CCBlade(object):
             alpha_deg = np.rad2deg(alpha_rad)
 
             return (
-                a,
-                ap,
+                axial_induction,
+                tangential_induction,
                 Np,
                 Tp,
                 alpha_deg,
@@ -302,7 +234,6 @@ class CCBlade(object):
             )
 
         else:
-            # print('Warning: CCBlade.__loads: Wind Velocities, Vx=0, Vy=0. If unexpected, check assigned load cases, connections, and/or workflow order.')
             return (
                 0.0,
                 0.0,
@@ -319,8 +250,7 @@ class CCBlade(object):
             )
 
     def __windComponents(self, Uinf, Omega, azimuth):
-        """x, y components of wind in blade-aligned coordinate system"""
-
+        """Compute wind components."""
         Vx, Vy = windcomponents(
             len(self.r),
             self.r,
@@ -339,40 +269,7 @@ class CCBlade(object):
         return Vx, Vy
 
     def distributedAeroLoads(self, Uinf, Omega, pitch, azimuth):
-        """Compute distributed aerodynamic loads along blade.
-
-        Parameters
-        ----------
-        Uinf : float or array_like (m/s)
-            hub height wind speed (float).  If desired, an array can be input which specifies
-            the velocity at each radial location along the blade (useful for analyzing loads
-            behind tower shadow for example).  In either case shear corrections will be applied.
-        Omega : float (RPM)
-            rotor rotation speed
-        pitch : float (deg)
-            blade pitch in same direction as :ref:`twist <blade_airfoil_coord>`
-            (positive decreases angle of attack)
-        azimuth : float (deg)
-            the :ref:`azimuth angle <hub_azimuth_coord>` where aerodynamic loads should be computed at
-
-        Returns
-        -------
-        loads : dict
-            Dictionary of distributed aerodynamic loads (and other useful quantities). Keys include:
-
-            - 'Np' : force per unit length normal to the section on downwind side (N/m)
-            - 'Tp' : force per unit length tangential to the section in the direction of rotation (N/m)
-            - 'a' : axial induction factor
-            - 'ap' : tangential induction factor
-            - 'alpha' : airfoil angle of attack (degrees)
-            - 'Cl' : lift coefficient
-            - 'Cd' : drag coefficient
-            - 'Cn' : normal force coefficient
-            - 'Ct' : tangential force coefficient
-            - 'W' : airfoil relative velocity (m/s)
-            - 'Re' : chord Reynolds number
-        """
-
+        """Compute distributed aerodynamic loads."""
         self.pitch = np.deg2rad(pitch)
         azimuth = np.rad2deg(azimuth)
 
@@ -383,8 +280,8 @@ class CCBlade(object):
 
         # initialize
         n = len(self.r)
-        a = np.zeros(n)
-        ap = np.zeros(n)
+        axial_induction = np.zeros(n)
+        tangential_induction = np.zeros(n)
         alpha = np.zeros(n)
         cl = np.zeros(n)
         cd = np.zeros(n)
@@ -470,8 +367,8 @@ class CCBlade(object):
             # derivatives of residual
 
             (
-                a[i],
-                ap[i],
+                axial_induction[i],
+                tangential_induction[i],
                 Np[i],
                 Tp[i],
                 alpha[i],
@@ -486,8 +383,8 @@ class CCBlade(object):
 
             if np.isnan(Np[i]):
                 print(f"NaNs at {i}/{n}: {phi_lower} {phi_star} {phi_upper}")
-                a[i] = 0.0
-                ap[i] = 0.0
+                axial_induction[i] = 0.0
+                tangential_induction[i] = 0.0
                 Np[i] = 0.0
                 Tp[i] = 0.0
                 alpha[i] = 0.0
@@ -496,8 +393,8 @@ class CCBlade(object):
         loads = {
             "Np": Np,
             "Tp": Tp,
-            "a": a,
-            "ap": ap,
+            "a": axial_induction,
+            "ap": tangential_induction,
             "alpha": alpha,
             "Cl": cl,
             "Cd": cd,
@@ -510,34 +407,7 @@ class CCBlade(object):
         return loads
 
     def evaluate(self, Uinf, Omega, pitch, coefficients=False):
-        """Run the aerodynamic analysis at the specified conditions.
-
-        Parameters
-        ----------
-        Uinf : array_like (m/s)
-            hub height wind speed
-        Omega : array_like (RPM)
-            rotor rotation speed
-        pitch : array_like (deg)
-            blade pitch setting
-        coefficients : bool, optional
-            if True, results are returned in nondimensional form
-
-        Returns
-        -------
-        outputs : dict
-            Dictionary of integrated rotor quantities with the following keys:
-
-            - 'P' (W) or 'CP' : Rotor power or coefficient of
-            - 'T' (N) or 'CT' : Rotor thrust or coefficient of
-            - 'Y' (N) or 'CY' : Rotor side force or coefficient of
-            - 'Z' (N) or 'CZ' : Rotor vertical force or coefficient of
-            - 'Q' (N*m) or 'CQ' : Rotor torque or coefficient of
-            - 'Mb' (N*m) or 'CMb' : Blade root flap moment or coefficient of
-            - 'My' (N*m) or 'CMy' : Rotor y-axis moment or coefficient of
-            - 'Mz' (N*m) or 'CMz' : Rotor z-axis moment or coefficient of
-        """
-
+        """Run aerodynamic analysis."""
         # rename
         args = (
             self.r,

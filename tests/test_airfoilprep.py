@@ -340,7 +340,7 @@ class TestBlend(unittest.TestCase):
             -0.03625,
             -0.0301,
             -0.02825,
-            -0.0303,
+            -0.02954,
             -0.03415,
             -0.0362,
             -0.0378,
@@ -465,7 +465,7 @@ class TestBlend(unittest.TestCase):
             -0.03625,
             -0.0301,
             -0.02825,
-            -0.0303,
+            -0.02954,
             -0.03415,
             -0.0362,
             -0.0378,
@@ -1674,8 +1674,8 @@ class TestExtrap(unittest.TestCase):
         self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
 
     def test_extrap1(self):
-        cdmax = 1.29
-        newpolar = self.polar.extrapolate(cdmax=cdmax)
+        max_cd = 1.29
+        newpolar = self.polar.extrapolate(max_cd=max_cd)
 
         alpha_extrap = [
             -180,
@@ -1913,9 +1913,9 @@ class TestExtrap(unittest.TestCase):
         np.testing.assert_allclose(cm, cm_extrap, atol=5e-3)
 
     def test_extrap1_w_airfoil(self):
-        cdmax = 1.29
+        max_cd = 1.29
         af = Airfoil([self.polar2])
-        newaf = af.extrapolate(cdmax=cdmax)
+        newaf = af.extrapolate(max_cd=max_cd)
         newpolar = newaf.polars[0]
 
         alpha_extrap = [
@@ -2099,8 +2099,8 @@ class TestExtrap(unittest.TestCase):
         np.testing.assert_allclose(cm, cm_extrap, atol=5e-3)
 
     def test_extrap2(self):
-        cdmax = 1.0
-        newpolar = self.polar.extrapolate(cdmax=cdmax)
+        max_cd = 1.0
+        newpolar = self.polar.extrapolate(max_cd=max_cd)
 
         alpha_extrap = [
             -180,
@@ -2338,8 +2338,8 @@ class TestExtrap(unittest.TestCase):
         np.testing.assert_allclose(cm, cm_extrap, atol=5e-3)
 
     def test_extrap3(self):
-        cdmax = 1.5
-        newpolar = self.polar.extrapolate(cdmax)
+        max_cd = 1.5
+        newpolar = self.polar.extrapolate(max_cd)
 
         alpha_extrap = [
             -180,

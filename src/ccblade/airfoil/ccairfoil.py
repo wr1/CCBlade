@@ -27,24 +27,11 @@ from scipy.interpolate import RectBivariateSpline, bisplev
 from .airfoil import Airfoil
 
 
-class CCAirfoil:
-    """A helper class to evaluate airfoil data using a continuously differentiable cubic spline"""
+class CCAirfoil(object):
+    """CCAirfoil class for spline evaluation."""
 
     def __init__(self, alpha, Re, cl, cd, cm=[], x=[], y=[], AFName="DEFAULTAF"):
-        """Setup CCAirfoil from raw airfoil data on a grid.
-        Parameters
-        ----------
-        alpha : array_like (deg)
-            angles of attack where airfoil data are defined
-            (should be defined from -180 to +180 degrees)
-        Re : array_like
-            Reynolds numbers where airfoil data are defined
-            (can be empty or of length one if not Reynolds number dependent)
-        cl : array_like
-            lift coefficient 2-D array with shape (alpha.size, Re.size)
-            cl[i, j] is the lift coefficient at alpha[i] and Re[j]
-        """
-
+        """Constructor for CCAirfoil."""
         alpha = np.deg2rad(alpha)
         self.x = x
         self.y = y
@@ -82,24 +69,13 @@ class CCAirfoil:
 
     @classmethod
     def initFromAerodynFile(cls, aerodynFile):
-        """convenience method for initializing with AeroDyn formatted files
-        Parameters
-        ----------
-        aerodynFile : str
-            location of AeroDyn style airfoiil file
-        Returns
-        -------
-        af : CCAirfoil
-            a constructed CCAirfoil object
-        """
-
+        """Construct from AeroDyn file."""
         af = Airfoil.initFromAerodynFile(aerodynFile)
         alpha, Re, cl, cd, cm = af.createDataGrid()
         return cls(alpha, Re, cl, cd, cm=cm)
 
     def max_eff(self, Re):
-        # Get the angle of attack, cl and cd at max airfoil efficiency. For a cylinder, set the angle of attack to 0
-
+        """Get max efficiency."""
         Eff = np.zeros_like(self.alpha)
 
         # Check efficiency only between -20 and +40 deg
@@ -126,15 +102,10 @@ class CCAirfoil:
             cd_Emax = cd[i_max]
             Emax = Eff[i_max]
 
-        # print Emax, np.deg2rad(alpha_Emax), cl_Emax, cd_Emax
-
         return Emax, alpha_Emax, cl_Emax, cd_Emax
 
     def awayfromstall(self, Re, margin):
-        # Get the angle of attack, cl and cd with a margin (in degrees) from the stall point. For a cylinder, set the angle of attack to 0 deg
-
-        # Eff         = np.zeros_like(self.alpha)
-
+        """Get away from stall."""
         # Look for stall only between -20 and +40 deg
         aoa_start = -20.0
         aoa_end = 40
@@ -157,32 +128,10 @@ class CCAirfoil:
         cd_op = self.cd_spline.ev(alpha_op, Re)
         Eff_op = cl_op / cd_op
 
-        # print Emax, np.deg2rad(alpha_Emax), cl_Emax, cd_Emax
-
         return Eff_op, alpha_op, cl_op, cd_op
 
     def evaluate(self, alpha, Re, return_cm=False):
-        """Get lift/drag coefficient at the specified angle of attack and Reynolds number.
-        Parameters
-        ----------
-        alpha : float (rad)
-            angle of attack
-        Re : float
-            Reynolds number
-
-        Returns
-        -------
-        cl : float
-            lift coefficient
-        cd : float
-            drag coefficient
-
-        Notes
-        -----
-        This method uses a spline so that the output is continuously differentiable, and
-        also uses a small amount of smoothing to help remove spurious multiple solutions.
-        """
-
+        """Evaluate coefficients."""
         cl = self.cl_spline.ev(alpha, Re)
         cd = self.cd_spline.ev(alpha, Re)
 
@@ -193,7 +142,7 @@ class CCAirfoil:
             return cl, cd
 
     def derivatives(self, alpha, Re):
-        # note: direct call to bisplev will be unnecessary with latest scipy update (add derivative method)
+        """Compute derivatives."""
         tck_cl = self.cl_spline.tck[:3] + self.cl_spline.degrees  # concatenate lists
         tck_cd = self.cd_spline.tck[:3] + self.cd_spline.degrees
 
@@ -213,8 +162,7 @@ class CCAirfoil:
         return dcl_dalpha, dcl_dRe, dcd_dalpha, dcd_dRe
 
     def eval_unsteady(self, alpha, cl, cd, cm):
-        # calculate unsteady coefficients from polars for OpenFAST's Aerodyn
-
+        """Evaluate unsteady parameters."""
         unsteady = {}
 
         alpha_rad = np.deg2rad(alpha)
@@ -318,7 +266,6 @@ class CCAirfoil:
 
         # C_nalpha
         if max(np.abs(np.gradient(cm))) > 1.0e-10:
-            # unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
             unsteady["C_nalpha"] = max(
                 np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1])
             )

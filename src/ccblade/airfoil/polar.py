@@ -18,117 +18,56 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 import numpy as np
 
 
 class Polar:
-    """Defines section lift, drag, and pitching moment coefficients as a function of angle of attack at a particular Reynolds number."""
+    """Polar class for airfoil coefficients."""
 
     def __init__(self, Re, alpha, cl, cd, cm):
-        """Constructor
-
-        Parameters
-        ----------
-        Re : float
-            Reynolds number
-        alpha : ndarray (deg)
-            angle of attack
-        cl : ndarray
-            lift coefficient
-        cd : ndarray
-            drag coefficient
-        cm : ndarray
-            moment coefficient
-        """
-
+        """Constructor for Polar."""
         self.Re = Re
         self.alpha = np.array(alpha)
         self.cl = np.array(cl)
         self.cd = np.array(cd)
         self.cm = np.array(cm)
 
-    def blend(self, other, weight):
-        """Blend this polar with another one with the specified weighting
-
-        Parameters
-        ----------
-        other : Polar
-            another Polar object to blend with
-        weight : float
-            blending parameter between 0 and 1.  0 returns self, whereas 1 returns other.
-
-        Returns
-        -------
-        polar : Polar
-            a blended Polar
-
-        """
-
+    def blend(self, other_polar, blend_weight):
+        """Blend with another polar."""
         # generate merged set of angles of attack - get unique values
-        alpha = np.union1d(self.alpha, other.alpha)
+        alpha = np.union1d(self.alpha, other_polar.alpha)
 
         # truncate (TODO: could also have option to just use one of the polars for values out of range)
-        min_alpha = max(self.alpha.min(), other.alpha.min())
-        max_alpha = min(self.alpha.max(), other.alpha.max())
+        min_alpha = max(self.alpha.min(), other_polar.alpha.min())
+        max_alpha = min(self.alpha.max(), other_polar.alpha.max())
         alpha = alpha[np.logical_and(alpha >= min_alpha, alpha <= max_alpha)]
-        # alpha = np.array([a for a in alpha if a >= min_alpha and a <= max_alpha])
 
         # interpolate to new alpha
         cl1 = np.interp(alpha, self.alpha, self.cl)
-        cl2 = np.interp(alpha, other.alpha, other.cl)
+        cl2 = np.interp(alpha, other_polar.alpha, other_polar.cl)
         cd1 = np.interp(alpha, self.alpha, self.cd)
-        cd2 = np.interp(alpha, other.alpha, other.cd)
+        cd2 = np.interp(alpha, other_polar.alpha, other_polar.cd)
         cm1 = np.interp(alpha, self.alpha, self.cm)
-        cm2 = np.interp(alpha, other.alpha, other.cm)
+        cm2 = np.interp(alpha, other_polar.alpha, other_polar.cm)
 
         # linearly blend
-        Re = self.Re + weight * (other.Re - self.Re)
-        cl = cl1 + weight * (cl2 - cl1)
-        cd = cd1 + weight * (cd2 - cd1)
-        cm = cm1 + weight * (cm2 - cm1)
+        Re = self.Re + blend_weight * (other_polar.Re - self.Re)
+        cl = cl1 + blend_weight * (cl2 - cl1)
+        cd = cd1 + blend_weight * (cd2 - cd1)
+        cm = cm1 + blend_weight * (cm2 - cm1)
 
         return type(self)(Re, alpha, cl, cd, cm)
 
     def correction3D(
         self,
-        r_over_R,
-        chord_over_r,
-        tsr,
+        radial_position_ratio,
+        chord_to_radius_ratio,
+        tip_speed_ratio,
         alpha_max_corr=30,
         alpha_linear_min=-5,
         alpha_linear_max=5,
     ):
-        """Applies 3-D corrections for rotating sections from the 2-D data.
-
-        Parameters
-        ----------
-        r_over_R : float
-            local radial position / rotor radius
-        chord_over_r : float
-            local chord length / local radial location
-        tsr : float
-            tip-speed ratio
-        alpha_max_corr : float, optional (deg)
-            maximum angle of attack to apply full correction
-        alpha_linear_min : float, optional (deg)
-            angle of attack where linear portion of lift curve slope begins
-        alpha_linear_max : float, optional (deg)
-            angle of attack where linear portion of lift curve slope ends
-
-        Returns
-        -------
-        polar : Polar
-            A new Polar object corrected for 3-D effects
-
-        Notes
-        -----
-        The Du-Selig method :cite:`Du1998A-3-D-stall-del` is used to correct lift, and
-        the Eggers method :cite:`Eggers-Jr2003An-assessment-o` is used to correct drag.
-
-
-        """
-
+        """Apply 3-D corrections."""
         # rename and convert units for convenience
         alpha = np.radians(self.alpha)
         cl_2d = self.cl
@@ -141,9 +80,9 @@ class Polar:
         a = 1
         b = 1
         d = 1
-        lam = tsr / (1 + tsr**2) ** 0.5  # modified tip speed ratio
-        expon = d / lam / r_over_R
-        expon_d = d / lam / r_over_R / 2.0
+        lam = tip_speed_ratio / (1 + tip_speed_ratio**2) ** 0.5  # modified tip speed ratio
+        expon = d / lam / radial_position_ratio
+        expon_d = d / lam / radial_position_ratio / 2.0
 
         # find linear region
         idx = np.logical_and(alpha >= alpha_linear_min, alpha <= alpha_linear_max)
@@ -152,8 +91,8 @@ class Polar:
         alpha0 = -p[1] / m
 
         # correction factor
-        fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r**expon) / (b + chord_over_r**expon) - 1)
-        fcd = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r**expon_d) / (b + chord_over_r**expon_d) - 1)
+        fcl = 1.0 / m * (1.6 * chord_to_radius_ratio / 0.1267 * (a - chord_to_radius_ratio**expon) / (b + chord_to_radius_ratio**expon) - 1)
+        fcd = 1.0 / m * (1.6 * chord_to_radius_ratio / 0.1267 * (a - chord_to_radius_ratio**expon_d) / (b + chord_to_radius_ratio**expon_d) - 1)
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
         adj = ((np.pi / 2 - alpha) / (np.pi / 2 - alpha_max_corr)) ** 2
@@ -168,58 +107,20 @@ class Polar:
         dcd = cd_2d - cd0
         cd_3d = cd_2d + fcd * dcd
 
-        # # Eggers 2003 correction for drag
-        # delta_cl = cl_3d-cl_2d
-
-        # delta_cd = delta_cl*(np.sin(alpha) - 0.12*np.cos(alpha))/(np.cos(alpha) + 0.12*np.sin(alpha))
-        # cd_3d2 = cd_2d + delta_cd
-
         return type(self)(self.Re, np.degrees(alpha), cl_3d, cd_3d, self.cm)
 
-    def extrapolate(self, cdmax, AR=None, cdmin=0.001, nalpha=15):
-        """Extrapolates force coefficients up to +/- 180 degrees using Viterna's method
-        :cite:`Viterna1982Theoretical-and`.
-
-        Parameters
-        ----------
-        cdmax : float
-            maximum drag coefficient
-        AR : float, optional
-            aspect ratio = (rotor radius / chord_75% radius)
-            if provided, cdmax is computed from AR
-        cdmin: float, optional
-            minimum drag coefficient.  used to prevent negative values that can sometimes occur
-            with this extrapolation method
-        nalpha: int, optional
-            number of points to add in each segment of Viterna method
-
-        Returns
-        -------
-        polar : Polar
-            a new Polar object
-
-        Notes
-        -----
-        If the current polar already supplies data beyond 90 degrees then
-        this method cannot be used in its current form and will just return itself.
-
-        If AR is provided, then the maximum drag coefficient is estimated as
-
-        >>> cdmax = 1.11 + 0.018*AR
-
-
-        """
-
-        if cdmin < 0:
+    def extrapolate(self, max_cd, aspect_ratio=None, min_cd=0.001, num_alpha_points=15):
+        """Extrapolate to high angles."""
+        if min_cd < 0:
             raise Exception("cdmin cannot be < 0")
 
         # lift coefficient adjustment to account for assymetry
         cl_adj = 0.7
 
         # estimate CD max
-        if AR is not None:
-            cdmax = 1.11 + 0.018 * AR
-        self.cdmax = max(max(self.cd), cdmax)
+        if aspect_ratio is not None:
+            max_cd = 1.11 + 0.018 * aspect_ratio
+        self.cdmax = max(max(self.cd), max_cd)
 
         # extract matching info from ends
         alpha_high = np.radians(self.alpha[-1])
@@ -245,17 +146,17 @@ class Polar:
         self.B = (cd_high - self.cdmax * sa * sa) / ca
 
         # alpha_high <-> 90
-        alpha1 = np.linspace(alpha_high, np.pi / 2, nalpha)
+        alpha1 = np.linspace(alpha_high, np.pi / 2, num_alpha_points)
         alpha1 = alpha1[1:]  # remove first element so as not to duplicate when concatenating
         cl1, cd1 = self.__Viterna(alpha1, 1.0)
 
         # 90 <-> 180-alpha_high
-        alpha2 = np.linspace(np.pi / 2, np.pi - alpha_high, nalpha)
+        alpha2 = np.linspace(np.pi / 2, np.pi - alpha_high, num_alpha_points)
         alpha2 = alpha2[1:]
         cl2, cd2 = self.__Viterna(np.pi - alpha2, -cl_adj)
 
         # 180-alpha_high <-> 180
-        alpha3 = np.linspace(np.pi - alpha_high, np.pi, nalpha)
+        alpha3 = np.linspace(np.pi - alpha_high, np.pi, num_alpha_points)
         alpha3 = alpha3[1:]
         cl3, cd3 = self.__Viterna(np.pi - alpha3, 1.0)
         cl3 = (alpha3 - np.pi) / alpha_high * cl_high * cl_adj  # override with linear variation
@@ -268,24 +169,24 @@ class Polar:
         else:
             # -alpha_high <-> alpha_low
             # Note: this is done slightly differently than AirfoilPrep for better continuity
-            alpha4 = np.linspace(-alpha_high, alpha_low, nalpha)
+            alpha4 = np.linspace(-alpha_high, alpha_low, num_alpha_points)
             alpha4 = alpha4[1:-2]  # also remove last element for concatenation for this case
             cl4 = -cl_high * cl_adj + (alpha4 + alpha_high) / (alpha_low + alpha_high) * (cl_low + cl_high * cl_adj)
             cd4 = cd_low + (alpha4 - alpha_low) / (-alpha_high - alpha_low) * (cd_high - cd_low)
             alpha5max = -alpha_high
 
         # -90 <-> -alpha_high
-        alpha5 = np.linspace(-np.pi / 2, alpha5max, nalpha)
+        alpha5 = np.linspace(-np.pi / 2, alpha5max, num_alpha_points)
         alpha5 = alpha5[1:]
         cl5, cd5 = self.__Viterna(-alpha5, -cl_adj)
 
         # -180+alpha_high <-> -90
-        alpha6 = np.linspace(-np.pi + alpha_high, -np.pi / 2, nalpha)
+        alpha6 = np.linspace(-np.pi + alpha_high, -np.pi / 2, num_alpha_points)
         alpha6 = alpha6[1:]
         cl6, cd6 = self.__Viterna(alpha6 + np.pi, cl_adj)
 
         # -180 <-> -180 + alpha_high
-        alpha7 = np.linspace(-np.pi, -np.pi + alpha_high, nalpha)
+        alpha7 = np.linspace(-np.pi, -np.pi + alpha_high, num_alpha_points)
         cl7, cd7 = self.__Viterna(np.pi - alpha7, 1.0)
         cl7 = (alpha7 + np.pi) / alpha_high * cl_high * cl_adj  # linear variation
 
@@ -304,7 +205,7 @@ class Polar:
         cl = np.concatenate((cl7, cl6, cl5, cl4, self.cl, cl1, cl2, cl3))
         cd = np.concatenate((cd7, cd6, cd5, cd4, self.cd, cd1, cd2, cd3))
 
-        cd = np.maximum(cd, cdmin)  # don't allow negative drag coefficients
+        cd = np.maximum(cd, min_cd)  # don't allow negative drag coefficients
 
         # Setup alpha and cm to be used in extrapolation
         cm1_alpha = np.floor(self.alpha[0] / 10.0) * 10.0
@@ -333,21 +234,19 @@ class Polar:
         cm = np.interp(np.degrees(alpha), alpha_cm, cm_ext)
         return type(self)(self.Re, np.degrees(alpha), cl, cd, cm)
 
-    def __Viterna(self, alpha, cl_adj):
-        """private method to perform Viterna extrapolation"""
-
+    def __Viterna(self, alpha, cl_adjustment):
+        """Viterna extrapolation."""
         alpha = np.maximum(alpha, 0.0001)  # prevent divide by zero
 
         cl = self.cdmax / 2 * np.sin(2 * alpha) + self.A * np.cos(alpha) ** 2 / np.sin(alpha)
-        cl = cl * cl_adj
+        cl = cl * cl_adjustment
 
         cd = self.cdmax * np.sin(alpha) ** 2 + self.B * np.cos(alpha)
 
         return cl, cd
 
     def __CMCoeff(self, cl_high, cd_high, cm_high):
-        """private method to obtain CM0 and CMCoeff"""
-
+        """Get CM coefficient."""
         found_zero_lift = False
 
         for i in range(len(self.cm) - 1):
@@ -367,8 +266,7 @@ class Polar:
         return cmCoef
 
     def __getCM(self, i, cmCoef, alpha, cl_ext, cd_ext, alpha_low_deg, alpha_high_deg):
-        """private method to extrapolate Cm"""
-
+        """Extrapolate CM."""
         cm_new = 0
         if alpha[i] >= alpha_low_deg and alpha[i] <= alpha_high_deg:
             return
@@ -409,23 +307,7 @@ class Polar:
         return cm_new
 
     def unsteadyparam(self, alpha_linear_min=-5, alpha_linear_max=5):
-        """compute unsteady aero parameters used in AeroDyn input file
-
-        Parameters
-        ----------
-        alpha_linear_min : float, optional (deg)
-            angle of attack where linear portion of lift curve slope begins
-        alpha_linear_max : float, optional (deg)
-            angle of attack where linear portion of lift curve slope ends
-
-        Returns
-        -------
-        aerodynParam : tuple of floats
-            (control setting, stall angle, alpha for 0 cn, cn slope,
-            cn at stall+, cn at stall-, alpha for min CD, min(CD))
-
-        """
-
+        """Compute unsteady parameters."""
         alpha = np.radians(self.alpha)
         cl = self.cl
         cd = self.cd
@@ -489,13 +371,7 @@ class Polar:
         )
 
     def plot(self):
-        """plot cl/cd/cm polar
-
-        Returns
-        -------
-        figs : list of figure handles
-
-        """
+        """Plot polar."""
         import matplotlib.pyplot as plt
 
         p = self

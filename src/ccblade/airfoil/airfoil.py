@@ -25,18 +25,10 @@ from .polar import Polar
 
 
 class Airfoil(object):
-    """A collection of Polar objects at different Reynolds numbers"""
+    """Airfoil class with multiple polars."""
 
     def __init__(self, polars):
-        """Constructor
-
-        Parameters
-        ----------
-        polars : list(Polar)
-            list of Polar objects
-
-        """
-
+        """Constructor for Airfoil."""
         # sort by Reynolds number
         self.polars = sorted(polars, key=lambda p: p.Re)
 
@@ -45,18 +37,7 @@ class Airfoil(object):
 
     @classmethod
     def initFromAerodynFile(cls, aerodynFile, polarType=Polar):
-        """Construct Airfoil object from AeroDyn file
-
-        Parameters
-        ----------
-        aerodynFile : str
-            path/name of a properly formatted Aerodyn file
-
-        Returns
-        -------
-        obj : Airfoil
-
-        """
+        """Construct from AeroDyn file."""
         # initialize
         polars = []
 
@@ -107,25 +88,7 @@ class Airfoil(object):
         return cls(polars)
 
     def getPolar(self, Re):
-        """Gets a Polar object for this airfoil at the specified Reynolds number.
-
-        Parameters
-        ----------
-        Re : float
-            Reynolds number
-
-        Returns
-        -------
-        obj : Polar
-            a Polar object
-
-        Notes
-        -----
-        Interpolates as necessary. If Reynolds number is larger than or smaller than
-        the stored Polars, it returns the Polar with the closest Reynolds number.
-
-        """
-
+        """Get polar at Reynolds number."""
         p = self.polars
 
         if Re <= p[0].Re:
@@ -140,32 +103,11 @@ class Airfoil(object):
             weight = (Re - Relist[i - 1]) / (Relist[i] - Relist[i - 1])
             return p[i - 1].blend(p[i], weight)
 
-    def blend(self, other, weight):
-        """Blend this Airfoil with another one with the specified weighting.
-
-
-        Parameters
-        ----------
-        other : Airfoil
-            other airfoil to blend with
-        weight : float
-            blending parameter between 0 and 1.  0 returns self, whereas 1 returns other.
-
-        Returns
-        -------
-        obj : Airfoil
-            a blended Airfoil object
-
-        Notes
-        -----
-        First finds the unique Reynolds numbers.  Evaluates both sets of polars
-        at each of the Reynolds numbers, then blends at each Reynolds number.
-
-        """
-
+    def blend(self, other_airfoil, blend_weight):
+        """Blend with another airfoil."""
         # combine Reynolds numbers
         Relist1 = [p.Re for p in self.polars]
-        Relist2 = [p.Re for p in other.polars]
+        Relist2 = [p.Re for p in other_airfoil.polars]
         Relist = np.union1d(Relist1, Relist2)
 
         # blend polars
@@ -173,55 +115,28 @@ class Airfoil(object):
         polars = [0] * n
         for i in range(n):
             p1 = self.getPolar(Relist[i])
-            p2 = other.getPolar(Relist[i])
-            polars[i] = p1.blend(p2, weight)
+            p2 = other_airfoil.getPolar(Relist[i])
+            polars[i] = p1.blend(p2, blend_weight)
 
         return Airfoil(polars)
 
     def correction3D(
         self,
-        r_over_R,
-        chord_over_r,
-        tsr,
+        radial_position_ratio,
+        chord_to_radius_ratio,
+        tip_speed_ratio,
         alpha_max_corr=30,
         alpha_linear_min=-5,
         alpha_linear_max=5,
     ):
-        """apply 3-D rotational corrections to each polar in airfoil
-
-        Parameters
-        ----------
-        r_over_R : float
-            radial position / rotor radius
-        chord_over_r : float
-            local chord / local radius
-        tsr : float
-            tip-speed ratio
-        alpha_max_corr : float, optional (deg)
-            maximum angle of attack to apply full correction
-        alpha_linear_min : float, optional (deg)
-            angle of attack where linear portion of lift curve slope begins
-        alpha_linear_max : float, optional (deg)
-            angle of attack where linear portion of lift curve slope ends
-
-        Returns
-        -------
-        airfoil : Airfoil
-            airfoil with 3-D corrections
-
-        See Also
-        --------
-        Polar.correction3D : apply 3-D corrections for a Polar
-
-        """
-
+        """Apply 3-D corrections."""
         n = len(self.polars)
         polars = [0] * n
         for idx, p in enumerate(self.polars):
             polars[idx] = p.correction3D(
-                r_over_R,
-                chord_over_r,
-                tsr,
+                radial_position_ratio,
+                chord_to_radius_ratio,
+                tip_speed_ratio,
                 alpha_max_corr,
                 alpha_linear_min,
                 alpha_linear_max,
@@ -229,47 +144,17 @@ class Airfoil(object):
 
         return Airfoil(polars)
 
-    def extrapolate(self, cdmax, AR=None, cdmin=0.001):
-        """apply high alpha extensions to each polar in airfoil
-
-        Parameters
-        ----------
-        cdmax : float
-            maximum drag coefficient
-        AR : float, optional
-            blade aspect ratio (rotor radius / chord at 75% radius).  if included
-            it is used to estimate cdmax
-        cdmin: minimum drag coefficient
-
-        Returns
-        -------
-        airfoil : Airfoil
-            airfoil with +/-180 degree extensions
-
-        See Also
-        --------
-        Polar.extrapolate : extrapolate a Polar to high angles of attack
-
-        """
-
+    def extrapolate(self, max_cd, aspect_ratio=None, min_cd=0.001):
+        """Extrapolate polars."""
         n = len(self.polars)
         polars = [0] * n
         for idx, p in enumerate(self.polars):
-            polars[idx] = p.extrapolate(cdmax, AR, cdmin)
+            polars[idx] = p.extrapolate(max_cd, aspect_ratio, min_cd)
 
         return Airfoil(polars)
 
     def interpToCommonAlpha(self, alpha=None):
-        """Interpolates all polars to a common set of angles of attack
-
-        Parameters
-        ----------
-        alpha : ndarray, optional
-            common set of angles of attack to use.  If None a union of
-            all angles of attack in the polars is used.
-
-        """
-
+        """Interpolate to common alpha."""
         if alpha is None:
             # union of angle of attacks
             alpha = []
@@ -288,15 +173,7 @@ class Airfoil(object):
         return Airfoil(polars)
 
     def writeToAerodynFile(self, filename):
-        """Write the airfoil section data to a file using AeroDyn input file style.
-
-        Parameters
-        ----------
-        filename : str
-            name (+ relative path) of where to write file
-
-        """
-
+        """Write to AeroDyn file."""
         # aerodyn and wtperf require common set of angles of attack
         af = self.interpToCommonAlpha()
 
@@ -352,23 +229,7 @@ class Airfoil(object):
         f.close()
 
     def createDataGrid(self):
-        """interpolate airfoil data onto uniform alpha-Re grid.
-
-        Returns
-        -------
-        alpha : ndarray (deg)
-            a common set of angles of attack (union of all polars)
-        Re : ndarray
-            all Reynolds numbers defined in the polars
-        cl : ndarray
-            lift coefficient 2-D array with shape (alpha.size, Re.size)
-            cl[i, j] is the lift coefficient at alpha[i] and Re[j]
-        cd : ndarray
-            drag coefficient 2-D array with shape (alpha.size, Re.size)
-            cd[i, j] is the drag coefficient at alpha[i] and Re[j]
-
-        """
-
+        """Create data grid."""
         af = self.interpToCommonAlpha()
         polarList = af.polars
 
@@ -391,20 +252,7 @@ class Airfoil(object):
         return alpha, Re, cl, cd, cm
 
     def plot(self, single_figure=True):
-        """plot cl/cd/cm polars
-
-        Parameters
-        ----------
-        single_figure : bool
-            True  : plot all cl on the same figure (same for cd,cm)
-            False : plot all cl/cd/cm on separate figures
-
-        Returns
-        -------
-        figs : list of figure handles
-
-        """
-
+        """Plot polars."""
         import matplotlib.pyplot as plt
 
         figs = []
