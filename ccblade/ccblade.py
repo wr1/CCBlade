@@ -28,8 +28,7 @@ import numpy as np
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 
-import ccblade._bem as _bem
-from ccblade.airfoilprep import Airfoil
+from .bem import *
 
 # ------------------
 #  Airfoil Class
@@ -545,7 +544,7 @@ class CCBlade(object):
             (see Section 4.2 in :cite:`Ning2013A-simple-soluti`).  This can be worked around, but has
             not been implemented.
         iterRe : int, optional
-            The number of iterations to use to converge Reynolds number.  Generally iterRe=1 is sufficient,
+            The number of iterations to converge Reynolds number.  Generally iterRe=1 is sufficient,
             but for high accuracy in Reynolds number effects, iterRe=2 iterations can be used.  More than that
             should not be necessary.  Gradients have only been implemented for the case iterRe=1.
         derivatives : boolean, optional
@@ -622,10 +621,10 @@ class CCBlade(object):
 
         for i in range(self.iterRe):
 
-            alpha, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
+            alpha, W, Re = relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
             cl, cd = af.evaluate(alpha, Re)
 
-            fzero, a, ap = _bem.inductionfactors(
+            fzero, a, ap = inductionfactors(
                 r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions
             )
 
@@ -647,7 +646,7 @@ class CCBlade(object):
         ap = 0.0
         for i in range(self.iterRe):
 
-            fzero, a, ap = _bem.inductionfactors(
+            fzero, a, ap = inductionfactors(
                 r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions
             )
 
@@ -673,7 +672,7 @@ class CCBlade(object):
         # alpha, Re (analytic derivaives)
         a = 0.0
         ap = 0.0
-        alpha, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
+        alpha, W, Re = relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
 
         dalpha_dx = np.array([1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0])
         dRe_dx = np.array([0.0, Re / chord, 0.0, Re * Vx / W ** 2, Re * Vy / W ** 2, 0.0, 0.0, 0.0, 0.0])
@@ -689,7 +688,7 @@ class CCBlade(object):
         # residual, a, ap (Tapenade)
         dx_dx = np.eye(9)
 
-        fzero, dR_dx, a, da_dx, ap, dap_dx = _bem.inductionfactors_dv(
+        fzero, dR_dx, a, da_dx, ap, dap_dx = inductionfactors_dv(
             r,
             dx_dx[5, :],
             chord,
@@ -727,7 +726,7 @@ class CCBlade(object):
                 a = 0.0
                 ap = 0.0
 
-            alpha_rad, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
+            alpha_rad, W, Re = relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
             if not rotating:
                 cl, cd = af.evaluate(alpha_rad, Re)
 
@@ -759,7 +758,7 @@ class CCBlade(object):
 
                 # alpha, W, Re (Tapenade)
 
-                alpha_rad, dalpha_dx, W, dW_dx, Re, dRe_dx = _bem.relativewind_dv(
+                alpha_rad, dalpha_dx, W, dW_dx, Re, dRe_dx = relativewind_dv(
                     phi,
                     dx_dx[0, :],
                     a,
@@ -814,7 +813,7 @@ class CCBlade(object):
     def __windComponents(self, Uinf, Omega, azimuth):
         """x, y components of wind in blade-aligned coordinate system"""
 
-        Vx, Vy = _bem.windcomponents(
+        Vx, Vy = windcomponents(
             self.r,
             self.precurve,
             self.presweep,
@@ -835,7 +834,7 @@ class CCBlade(object):
         n = len(self.r)
         dy_dy = np.eye(3 * n + 8)
 
-        _, Vxd, _, Vyd = _bem.windcomponents_dv(
+        _, Vxd, _, Vyd = windcomponents_dv(
             self.r,
             dy_dy[:, :n],
             self.precurve,
@@ -1278,7 +1277,7 @@ class CCBlade(object):
                 loads, derivs = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], np.rad2deg(azimuth))
                 Np, Tp, W = (loads["Np"], loads["Tp"], loads["W"])
 
-                Tsub, Ysub, Zsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
+                Tsub, Ysub, Zsub, Qsub, Msub = thrusttorque(Np, Tp, *args)
 
                 # Scale rotor quantities (thrust & torque) by num blades.  Keep blade root moment as is
                 T[i] += self.B * Tsub / nsec
@@ -1322,7 +1321,7 @@ class CCBlade(object):
                     dQ_dv[i, :, :] += self.B * dQ_dv_sub / nsec
                     dMy_dv[i, :, :] += self.B * dM_dv_sub * ca / nsec
                     dMz_dv[i, :, :] += self.B * dM_dv_sub * sa / nsec
-                    dMb_dv[i, :, :] += dM_dv_sub / nsec
+                    dMb_dv[i, :, :] += self.B * dM_dv_sub / nsec
 
         # Power
         P = Q * Omega * np.pi / 30.0  # RPM to rad/s
@@ -1430,7 +1429,7 @@ class CCBlade(object):
                     dCZ_ds,
                     dCQ_ds,
                     dCMy_ds,
-                    dCMz_ds,
+                    dMz_ds,
                     dCMb_ds,
                     dCP_ds,
                     dCT_dv,
@@ -1511,7 +1510,7 @@ class CCBlade(object):
         Zb = np.array([0.0, 0.0, 1.0, 0.0, 0.0])
         Qb = np.array([0.0, 0.0, 0.0, 1.0, 0.0])
         Mb = np.array([0.0, 0.0, 0.0, 0.0, 1.0])
-        Npb, Tpb, rb, precurveb, presweepb, preconeb, Rhubb, Rtipb, precurvetipb, presweeptipb = _bem.thrusttorque_bv(
+        Npb, Tpb, rb, precurveb, presweepb, preconeb, Rhubb, Rtipb, precurvetipb, presweeptipb = thrusttorque_bv(
             Np, Tp, r, precurve, presweep, precone, Rhub, Rtip, precurveTip, presweepTip, Tb, Yb, Zb, Qb, Mb
         )
 

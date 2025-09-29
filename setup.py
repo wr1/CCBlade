@@ -94,5 +94,4 @@ class MesonBuildExt(build_ext):
 if __name__ == "__main__":
     setuptools.setup(cmdclass={"bdist_wheel": bdist_wheel, "build_ext": MesonBuildExt},
                      distclass=BinaryDistribution,
-                     ext_modules=[ MesonExtension("ccblade", this_dir) ],
                      )
