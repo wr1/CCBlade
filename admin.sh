@@ -25,7 +25,7 @@ ruff format
 ruff check --fix > out.txt
 
 # Run pytest and append to out.txt
-uv run pytest -v >> out.txt
+uv run pytest -v --cov=ccblade >> out.txt
 
 # Git commit each file
 for file in \
