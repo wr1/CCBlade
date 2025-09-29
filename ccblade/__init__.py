@@ -1,2 +1,1 @@
-from .ccblade import CCAirfoil, CCBlade
-
+from .core.ccblade import CCAirfoil, CCBlade
