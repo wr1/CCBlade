@@ -10,19 +10,25 @@ from setuptools.command.build_ext import build_ext
 from setuptools.dist import Distribution
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
+
 class bdist_wheel(_bdist_wheel):
     def finalize_options(self):
         _bdist_wheel.finalize_options(self)
         self.root_is_pure = False
 
+
 class BinaryDistribution(Distribution):
     """Distribution which always forces a binary package with platform name"""
+
     def has_ext_modules(foo):
         return True
+
+
 #######
 this_dir = os.path.abspath(os.path.dirname(__file__))
 staging_dir = os.path.join(this_dir, "meson_build")
 build_dir = os.path.join(this_dir, "build")
+
 
 def copy_shared_libraries():
     build_path = os.path.join(staging_dir, "ccblade")
@@ -34,35 +40,35 @@ def copy_shared_libraries():
                 print(f"Copying build file {file_path} -> {new_path}")
                 shutil.copy(file_path, new_path)
 
+
 #######
 class MesonExtension(setuptools.Extension):
-
     def __init__(self, name, sourcedir="", **kwa):
         setuptools.Extension.__init__(self, name, sources=[], **kwa)
         self.sourcedir = os.path.abspath(sourcedir)
 
+
 class MesonBuildExt(build_ext):
-    
     def copy_extensions_to_source(self):
         newext = []
         for ext in self.extensions:
-            if isinstance(ext, MesonExtension): continue
-            newext.append( ext )
+            if isinstance(ext, MesonExtension):
+                continue
+            newext.append(ext)
         self.extensions = newext
         super().copy_extensions_to_source()
-    
+
     def build_extension(self, ext):
         if not isinstance(ext, MesonExtension):
             super().build_extension(ext)
 
         else:
-
             # Ensure that Meson is present and working
             try:
                 self.spawn(["meson", "--version"])
             except OSError:
                 raise RuntimeError("Cannot find meson executable")
-            
+
             # check if meson extra args are specified
             meson_args = ""
             if "MESON_ARGS" in os.environ:
@@ -75,9 +81,15 @@ class MesonBuildExt(build_ext):
                     os.environ["CC"] = "gcc"
 
             purelibdir = "."
-            configure_call = ["meson", "setup", staging_dir, "--wipe",
-                          f"-Dpython.purelibdir={purelibdir}", f"--prefix={build_dir}", 
-                          f"-Dpython.platlibdir={purelibdir}"] + meson_args.split()
+            configure_call = [
+                "meson",
+                "setup",
+                staging_dir,
+                "--wipe",
+                f"-Dpython.purelibdir={purelibdir}",
+                f"--prefix={build_dir}",
+                f"-Dpython.platlibdir={purelibdir}",
+            ] + meson_args.split()
             configure_call = [m for m in configure_call if m.strip() != ""]
             print(configure_call)
 
@@ -90,8 +102,9 @@ class MesonBuildExt(build_ext):
             self.spawn(build_call)
             copy_shared_libraries()
 
-            
+
 if __name__ == "__main__":
-    setuptools.setup(cmdclass={"bdist_wheel": bdist_wheel, "build_ext": MesonBuildExt},
-                     distclass=BinaryDistribution,
-                     )
+    setuptools.setup(
+        cmdclass={"bdist_wheel": bdist_wheel, "build_ext": MesonBuildExt},
+        distclass=BinaryDistribution,
+    )
