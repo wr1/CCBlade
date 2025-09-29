@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "meson>=1.1", "numpy","ninja","wheel"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,7 +40,6 @@ classifiers = [  # Optional
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Fortran",
 ]
 
 dependencies = [
@@ -58,8 +57,7 @@ dependencies = [
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["meson", "ninja"]
-test = ["pytest"]
+dev = ["pytest"]
 
 # List URLs that are relevant to your project
 #
@@ -80,17 +78,11 @@ test = ["pytest"]
 zip-safe = false
 include-package-data = true
 
-#[tool.setuptools.packages]
-#find = {}
-
 [tool.setuptools.packages.find]
-#where = ["wisdem"]
 exclude = ["docs", "test"]
 namespaces = true
 
 [tool.setuptools.package-data]
-# If there are data files included in your packages that need to be
-# installed, specify them here.
 "*" = ["*.yaml", "*.xlsx", "*.txt", "*.so", "*.lib", "*.pyd", "*.pdb", "*.dylib", "*.dll", "*.exe"]
 
 [tool.black]
@@ -112,7 +104,6 @@ exclude = '''
 '''
 
 [tool.isort]
-# https://github.com/PyCQA/isort
 multi_line_output = "3"
 include_trailing_comma = true
 force_grid_wrap = false
@@ -124,11 +115,7 @@ length_sort = "1"
 profile = "black"
 skip_glob = ['__init__.py']
 atomic = true
-#lines_after_imports = 2
-#lines_between_types = 1
-#src_paths=isort,test
 
 [tool.cibuildwheel]
 skip = ["cp36-*", "cp37-*", "cp38-*", "*-win32"]
 build-frontend = "build"
-
