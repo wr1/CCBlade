@@ -18,7 +18,7 @@ from os import path
 
 import numpy as np
 from ccblade.core.ccblade import CCBlade
-from ccblade.airfoil.airfoil import CCAirfoil
+from ccblade.airfoil.ccairfoil import CCAirfoil
 
 
 class TestNREL5MW(unittest.TestCase):
