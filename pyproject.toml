@@ -34,6 +34,7 @@ dependencies = [
   "numpy",
   "scipy",
   "openmdao",
+  "matplotlib",
 ]
 
 [project.optional-dependencies]
