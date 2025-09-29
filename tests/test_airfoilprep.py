@@ -2576,40 +2576,16 @@ class TestExtrap(unittest.TestCase):
         np.testing.assert_allclose(cd, cd_extrap, atol=1.5e-4)
         np.testing.assert_allclose(cm, cm_extrap, atol=5e-3)
 
+    def test_plot(self):
+        """Test plotting functions."""
+        af = Airfoil([self.polar])
+        figs = af.plot()
+        self.assertIsInstance(figs, list)
+        self.assertGreater(len(figs), 0)
 
-# class TestSpline(unittest.TestCase):
-
-#     def setUp(self):
-
-
-#         Re = 1.0
-#         alpha = [1.0, 2.0, 3.0, 4.0, 5.0]
-#         cl = [0.1, 0.2, 0.3, 0.4, 0.5]
-#         cd = [0.001, 0.002, 0.003, 0.004, 0.005]
-
-#         self.p1 = Polar(Re, alpha, cl, cd)
-
-
-#         Re = 2.0
-#         alpha = [1.0, 2.0, 3.0, 4.0, 5.0]
-#         cl = [0.12, 0.22, 0.32, 0.42, 0.52]
-#         cd = [0.0012, 0.0022, 0.0032, 0.0042, 0.0052]
-
-#         self.p2 = Polar(Re, alpha, cl, cd)
-
-
-#     def test_spline1(self):
-#         af = Airfoil([self.p1, self.p2])
-
-#         cl, cd, cm = af.evaluate(1.5, 1.0)
-
-#         self.assertAlmostEqual(cl, 0.15)
-#         self.assertAlmostEqual(cd, 0.0015)
-
-#         cl, cd, cm = af.evaluate(1.5, 1.5)
-
-#         self.assertAlmostEqual(cl, 0.16)
-#         self.assertAlmostEqual(cd, 0.0016)
+        figs = self.polar.plot()
+        self.assertIsInstance(figs, list)
+        self.assertGreater(len(figs), 0)
 
 
 def suite():

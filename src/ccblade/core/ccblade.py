@@ -23,13 +23,17 @@ limitations under the License.
 import os
 import warnings
 import multiprocessing as mp
+import logging
 
 import numpy as np
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 
 from .bem import *
+from .datamodels import BladeLoads, RotorOutputs
 from ..airfoil.airfoil import Airfoil
+
+logger = logging.getLogger(__name__)
 
 # ------------------
 #  Main Class: CCBlade
@@ -382,7 +386,7 @@ class CCBlade(object):
             ) = self.__loads(phi_star, rotating, *args)
 
             if np.isnan(Np[i]):
-                print(f"NaNs at {i}/{n}: {phi_lower} {phi_star} {phi_upper}")
+                logger.warning(f"NaNs at {i}/{n}: {phi_lower} {phi_star} {phi_upper}")
                 axial_induction[i] = 0.0
                 tangential_induction[i] = 0.0
                 Np[i] = 0.0
@@ -404,7 +408,7 @@ class CCBlade(object):
             "Re": Re,
         }
 
-        return loads
+        return BladeLoads(**loads)
 
     def evaluate(self, Uinf, Omega, pitch, coefficients=False):
         """Run aerodynamic analysis."""
@@ -446,7 +450,7 @@ class CCBlade(object):
                 loads = self.distributedAeroLoads(
                     Uinf[i], Omega[i], pitch[i], np.rad2deg(azimuth)
                 )
-                Np, Tp, W = (loads["Np"], loads["Tp"], loads["W"])
+                Np, Tp, W = (loads.Np, loads.Tp, loads.W)
 
                 Tsub, Ysub, Zsub, Qsub, Msub = thrusttorque(len(self.r), Np, Tp, *args)
 
@@ -496,4 +500,4 @@ class CCBlade(object):
             outputs["CMz"] = CMz
             outputs["CMb"] = CMb
 
-        return outputs
+        return RotorOutputs(**outputs)

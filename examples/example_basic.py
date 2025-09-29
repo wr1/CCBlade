@@ -1,10 +1,14 @@
 # just to temporarily change PYTHONPATH without installing
 import sys
 import os
+import logging
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 basepath = os.path.join(os.path.dirname(__file__), "5MW_AFFiles")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # 1 ---------
@@ -14,6 +18,7 @@ from math import pi
 import matplotlib.pyplot as plt
 
 from ccblade import CCAirfoil, CCBlade
+from ccblade.airfoil.airfoil import Airfoil
 
 
 # geometry
@@ -124,6 +129,14 @@ af = [0] * len(r)
 for i in range(len(r)):
     af[i] = airfoil_types[af_idx[i]]
 
+# Plot airfoil data for the DU40 airfoil
+airfoil_obj = Airfoil.initFromAerodynFile(os.path.join(basepath, "DU40_A17.dat"))
+figs = airfoil_obj.plot()
+for i, fig in enumerate(figs):
+    filename = f'airfoil_plot_{i}.png'
+    fig.savefig(filename)
+    logger.info(f"Saved airfoil plot to {filename}")
+
 # 2 ----------
 
 # 3 ----------
@@ -181,7 +194,9 @@ plt.xlabel("blade fraction")
 plt.ylabel("distributed aerodynamic loads (kN)")
 plt.legend(loc="upper left")
 plt.grid()
-plt.show()
+filename = 'loads_plot.png'
+plt.savefig(filename)
+logger.info(f"Saved loads plot to {filename}")
 # 5 ----------
 
 # 6 ----------
@@ -196,9 +211,9 @@ CP = outputs["CP"]
 CT = outputs["CT"]
 CQ = outputs["CQ"]
 
-print("CP =", CP)
-print("CT =", CT)
-print("CQ =", CQ)
+logger.info(f"CP = {CP}")
+logger.info(f"CT = {CT}")
+logger.info(f"CQ = {CQ}")
 
 # 6 ----------
 
@@ -220,5 +235,7 @@ plt.figure()
 plt.plot(tsr, CP)
 plt.xlabel(r"$\lambda$")
 plt.ylabel(r"$c_p$")
-plt.show()
+filename = 'cp_plot.png'
+plt.savefig(filename)
+logger.info(f"Saved CP plot to {filename}")
 # 7 ----------

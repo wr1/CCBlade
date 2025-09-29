@@ -312,7 +312,9 @@ class TestNREL5MW(unittest.TestCase):
         )  # remove weight of rotor that is included in reported results
 
         outputs = self.rotor.evaluate(Uinf, Omega, pitch)
-        P, T, Q = [outputs[key] for key in ("P", "T", "Q")]
+        P = np.array(outputs.P)
+        T = np.array(outputs.T)
+        Q = np.array(outputs.Q)
 
         # import matplotlib.pyplot as plt
         # plt.plot(Uinf, P/1e6, 'b-')

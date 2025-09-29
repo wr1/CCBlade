@@ -270,7 +270,7 @@ class Airfoil(object):
 
             # loop through all polars to see if we need to generate handles for cm figs
             for p in self.polars:
-                if p.useCM == True:
+                if np.count_nonzero(p.cm) > 0:
                     fig3 = plt.figure()
                     ax3 = fig3.add_subplot(111)
                     figs.append(fig3)
@@ -291,10 +291,11 @@ class Airfoil(object):
                 ax2.legend(loc="best")
 
                 # plot cm
-                ax3.plot(p.alpha, p.cm, label="Re = " + str(p.Re / 1e6) + " million")
-                ax3.set_xlabel("angle of attack (deg)")
-                ax3.set_ylabel("moment coefficient")
-                ax3.legend(loc="best")
+                if np.count_nonzero(p.cm) > 0:
+                    ax3.plot(p.alpha, p.cm, label="Re = " + str(p.Re / 1e6) + " million")
+                    ax3.set_xlabel("angle of attack (deg)")
+                    ax3.set_ylabel("moment coefficient")
+                    ax3.legend(loc="best")
 
         # otherwise, multi figure mode -- plot all on separate figures
         else:
@@ -315,12 +316,13 @@ class Airfoil(object):
                 ax.set_ylabel("drag coefficient")
                 ax.legend(loc="best")
 
-                fig = plt.figure()
-                figs.append(fig)
-                ax = fig.add_subplot(111)
-                ax.plot(p.alpha, p.cm, label="Re = " + str(p.Re / 1e6) + " million")
-                ax.set_xlabel("angle of attack (deg)")
-                ax.set_ylabel("moment coefficient")
-                ax.legend(loc="best")
+                if np.count_nonzero(p.cm) > 0:
+                    fig = plt.figure()
+                    figs.append(fig)
+                    ax = fig.add_subplot(111)
+                    ax.plot(p.alpha, p.cm, label="Re = " + str(p.Re / 1e6) + " million")
+                    ax.set_xlabel("angle of attack (deg)")
+                    ax.set_ylabel("moment coefficient")
+                    ax.legend(loc="best")
 
         return figs

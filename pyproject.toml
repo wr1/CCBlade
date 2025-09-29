@@ -35,6 +35,7 @@ dependencies = [
   "scipy",
   "openmdao",
   "matplotlib",
+  "pydantic",
 ]
 
 [project.optional-dependencies]
