@@ -666,7 +666,7 @@ class CCBladeTwist(ExplicitComponent):
             ccblade.alpha = alpha
             ccblade.cl = cl
             ccblade.cd = cd
-            _, _ = ccblade.evaluate(
+            _ = ccblade.evaluate(
                 [inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=False
             )
 
@@ -707,7 +707,7 @@ class CCBladeTwist(ExplicitComponent):
         )
 
         # Call ccblade evaluate (averaging across azimuth)
-        myout, _ = ccblade.evaluate(
+        myout = ccblade.evaluate(
             [inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True
         )
         CP, CMb, W = [myout[key] for key in ["CP", "CMb", "W"]]
@@ -899,7 +899,7 @@ class CCBladeEvaluate(ExplicitComponent):
             usecd=usecd,
         )
 
-        loads, _ = ccblade.evaluate(V_load, Omega_load, pitch_load, coefficients=True)
+        loads = ccblade.evaluate(V_load, Omega_load, pitch_load, coefficients=True)
         outputs["P"] = loads["P"]
         outputs["Mb"] = loads["Mb"]
         outputs["CP"] = loads["CP"]

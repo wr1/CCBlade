@@ -311,7 +311,7 @@ class TestNREL5MW(unittest.TestCase):
             m_rotor * g * math.sin(tilt)
         )  # remove weight of rotor that is included in reported results
 
-        outputs, derivs = self.rotor.evaluate(Uinf, Omega, pitch)
+        outputs = self.rotor.evaluate(Uinf, Omega, pitch)
         P, T, Q = [outputs[key] for key in ("P", "T", "Q")]
 
         # import matplotlib.pyplot as plt
