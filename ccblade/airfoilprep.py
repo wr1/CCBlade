@@ -99,7 +99,15 @@ class Polar(object):
 
         return type(self)(Re, alpha, cl, cd, cm)
 
-    def correction3D(self, r_over_R, chord_over_r, tsr, alpha_max_corr=30, alpha_linear_min=-5, alpha_linear_max=5):
+    def correction3D(
+        self,
+        r_over_R,
+        chord_over_r,
+        tsr,
+        alpha_max_corr=30,
+        alpha_linear_min=-5,
+        alpha_linear_max=5,
+    ):
         """Applies 3-D corrections for rotating sections from the 2-D data.
 
         Parameters
@@ -142,7 +150,7 @@ class Polar(object):
         a = 1
         b = 1
         d = 1
-        lam = tsr / (1 + tsr ** 2) ** 0.5  # modified tip speed ratio
+        lam = tsr / (1 + tsr**2) ** 0.5  # modified tip speed ratio
         expon = d / lam / r_over_R
         expon_d = d / lam / r_over_R / 2.0
 
@@ -153,9 +161,29 @@ class Polar(object):
         alpha0 = -p[1] / m
 
         # correction factor
-        fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
+        fcl = (
+            1.0
+            / m
+            * (
+                1.6
+                * chord_over_r
+                / 0.1267
+                * (a - chord_over_r**expon)
+                / (b + chord_over_r**expon)
+                - 1
+            )
+        )
         fcd = (
-            1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon_d) / (b + chord_over_r ** expon_d) - 1)
+            1.0
+            / m
+            * (
+                1.6
+                * chord_over_r
+                / 0.1267
+                * (a - chord_over_r**expon_d)
+                / (b + chord_over_r**expon_d)
+                - 1
+            )
         )
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
@@ -244,12 +272,14 @@ class Polar(object):
         # parameters used in model
         sa = np.sin(alpha_high)
         ca = np.cos(alpha_high)
-        self.A = (cl_high - self.cdmax * sa * ca) * sa / ca ** 2
+        self.A = (cl_high - self.cdmax * sa * ca) * sa / ca**2
         self.B = (cd_high - self.cdmax * sa * sa) / ca
 
         # alpha_high <-> 90
         alpha1 = np.linspace(alpha_high, np.pi / 2, nalpha)
-        alpha1 = alpha1[1:]  # remove first element so as not to duplicate when concatenating
+        alpha1 = alpha1[
+            1:
+        ]  # remove first element so as not to duplicate when concatenating
         cl1, cd1 = self.__Viterna(alpha1, 1.0)
 
         # 90 <-> 180-alpha_high
@@ -261,7 +291,9 @@ class Polar(object):
         alpha3 = np.linspace(np.pi - alpha_high, np.pi, nalpha)
         alpha3 = alpha3[1:]
         cl3, cd3 = self.__Viterna(np.pi - alpha3, 1.0)
-        cl3 = (alpha3 - np.pi) / alpha_high * cl_high * cl_adj  # override with linear variation
+        cl3 = (
+            (alpha3 - np.pi) / alpha_high * cl_high * cl_adj
+        )  # override with linear variation
 
         if alpha_low <= -alpha_high:
             alpha4 = []
@@ -272,9 +304,15 @@ class Polar(object):
             # -alpha_high <-> alpha_low
             # Note: this is done slightly differently than AirfoilPrep for better continuity
             alpha4 = np.linspace(-alpha_high, alpha_low, nalpha)
-            alpha4 = alpha4[1:-2]  # also remove last element for concatenation for this case
-            cl4 = -cl_high * cl_adj + (alpha4 + alpha_high) / (alpha_low + alpha_high) * (cl_low + cl_high * cl_adj)
-            cd4 = cd_low + (alpha4 - alpha_low) / (-alpha_high - alpha_low) * (cd_high - cd_low)
+            alpha4 = alpha4[
+                1:-2
+            ]  # also remove last element for concatenation for this case
+            cl4 = -cl_high * cl_adj + (alpha4 + alpha_high) / (
+                alpha_low + alpha_high
+            ) * (cl_low + cl_high * cl_adj)
+            cd4 = cd_low + (alpha4 - alpha_low) / (-alpha_high - alpha_low) * (
+                cd_high - cd_low
+            )
             alpha5max = -alpha_high
 
         # -90 <-> -alpha_high
@@ -289,10 +327,21 @@ class Polar(object):
 
         # -180 <-> -180 + alpha_high
         alpha7 = np.linspace(-np.pi, -np.pi + alpha_high, nalpha)
-        cl7, cd7 = self.__Viterna(alpha7 + np.pi, 1.0)
+        cl7, cd7 = self.__Viterna(np.pi - alpha7, 1.0)
         cl7 = (alpha7 + np.pi) / alpha_high * cl_high * cl_adj  # linear variation
 
-        alpha = np.concatenate((alpha7, alpha6, alpha5, alpha4, np.radians(self.alpha), alpha1, alpha2, alpha3))
+        alpha = np.concatenate(
+            (
+                alpha7,
+                alpha6,
+                alpha5,
+                alpha4,
+                np.radians(self.alpha),
+                alpha1,
+                alpha2,
+                alpha3,
+            )
+        )
         cl = np.concatenate((cl7, cl6, cl5, cl4, self.cl, cl1, cl2, cl3))
         cd = np.concatenate((cd7, cd6, cd5, cd4, self.cd, cd1, cd2, cd3))
 
@@ -312,12 +361,18 @@ class Polar(object):
         cm_ext = np.concatenate((cm1, self.cm, cm2))
         if np.count_nonzero(self.cm) > 0:
             cmCoef = self.__CMCoeff(cl_high, cd_high, cm_high)  # get cm coefficient
-            cl_cm = np.interp(alpha_cm, np.degrees(alpha), cl)  # get cl for applicable alphas
-            cd_cm = np.interp(alpha_cm, np.degrees(alpha), cd)  # get cd for applicable alphas
+            cl_cm = np.interp(
+                alpha_cm, np.degrees(alpha), cl
+            )  # get cl for applicable alphas
+            cd_cm = np.interp(
+                alpha_cm, np.degrees(alpha), cd
+            )  # get cd for applicable alphas
             alpha_low_deg = self.alpha[0]
             alpha_high_deg = self.alpha[-1]
             for i in range(len(alpha_cm)):
-                cm_new = self.__getCM(i, cmCoef, alpha_cm, cl_cm, cd_cm, alpha_low_deg, alpha_high_deg)
+                cm_new = self.__getCM(
+                    i, cmCoef, alpha_cm, cl_cm, cd_cm, alpha_low_deg, alpha_high_deg
+                )
                 if cm_new is None:
                     pass  # For when it reaches the range of cm's that the user provides
                 else:
@@ -330,7 +385,9 @@ class Polar(object):
 
         alpha = np.maximum(alpha, 0.0001)  # prevent divide by zero
 
-        cl = self.cdmax / 2 * np.sin(2 * alpha) + self.A * np.cos(alpha) ** 2 / np.sin(alpha)
+        cl = self.cdmax / 2 * np.sin(2 * alpha) + self.A * np.cos(alpha) ** 2 / np.sin(
+            alpha
+        )
         cl = cl * cl_adj
 
         cd = self.cdmax * np.sin(alpha) ** 2 + self.B * np.cos(alpha)
@@ -354,7 +411,9 @@ class Polar(object):
             cm0 = self.cm[0] + p * (self.cm[1] - self.cm[0])
         self.cm0 = cm0
         alpha_high = np.radians(self.alpha[-1])
-        XM = (-cm_high + cm0) / (cl_high * np.cos(alpha_high) + cd_high * np.sin(alpha_high))
+        XM = (-cm_high + cm0) / (
+            cl_high * np.cos(alpha_high) + cd_high * np.sin(alpha_high)
+        )
         cmCoef = (XM - 0.25) / np.tan((alpha_high - np.pi / 2))
         return cmCoef
 
@@ -370,11 +429,19 @@ class Polar(object):
             else:
                 if alpha[i] > 0:
                     x = cmCoef * np.tan(np.radians(alpha[i]) - np.pi / 2) + 0.25
-                    cm_new = self.cm0 - x * (cl_ext[i] * np.cos(np.radians(alpha[i])) + cd_ext[i] * np.sin(np.radians(alpha[i])))
+                    cm_new = self.cm0 - x * (
+                        cl_ext[i] * np.cos(np.radians(alpha[i]))
+                        + cd_ext[i] * np.sin(np.radians(alpha[i]))
+                    )
                 else:
                     x = cmCoef * np.tan(-np.radians(alpha[i]) - np.pi / 2) + 0.25
                     cm_new = -(
-                        self.cm0 - x * (-cl_ext[i] * np.cos(-np.radians(alpha[i])) + cd_ext[i] * np.sin(-np.radians(alpha[i])))
+                        self.cm0
+                        - x
+                        * (
+                            -cl_ext[i] * np.cos(-np.radians(alpha[i]))
+                            + cd_ext[i] * np.sin(-np.radians(alpha[i]))
+                        )
                     )
         else:
             if alpha[i] == 165:
@@ -394,7 +461,10 @@ class Polar(object):
             elif alpha[i] == -180:
                 cm_new = 0
             else:
-                print("Angle encountered for which there is no CM table value " "(near +/-180 deg). Program will stop.")
+                print(
+                    "Angle encountered for which there is no CM table value "
+                    "(near +/-180 deg). Program will stop."
+                )
         return cm_new
 
     def unsteadyparam(self, alpha_linear_min=-5, alpha_linear_max=5):
@@ -466,7 +536,16 @@ class Polar(object):
 
         # return: control setting, stall angle, alpha for 0 cn, cn slope,
         #         cn at stall+, cn at stall-, alpha for min CD, min(CD)
-        return (0.0, np.degrees(alphaU), np.degrees(alpha0), m, cnStallUpper, cnStallLower, alpha[minIdx], cd[minIdx])
+        return (
+            0.0,
+            np.degrees(alphaU),
+            np.degrees(alpha0),
+            m,
+            cnStallUpper,
+            cnStallLower,
+            alpha[minIdx],
+            cd[minIdx],
+        )
 
     def plot(self):
         """plot cl/cd/cm polar
@@ -559,7 +638,6 @@ class Airfoil(object):
 
         # loop through tables
         for i in range(numTables):
-
             # read Reynolds number
             Re = float(f.readline().split()[0]) * 1e6
 
@@ -580,8 +658,10 @@ class Airfoil(object):
                     break
                 data = [float(s) for s in line.split()]
                 if len(data) < 4:
-                    raise ValueError(f"Error: Expected 4 columns of data but found, {data}")
-                
+                    raise ValueError(
+                        f"Error: Expected 4 columns of data but found, {data}"
+                    )
+
                 alpha.append(data[0])
                 cl.append(data[1])
                 cd.append(data[2])
@@ -665,7 +745,15 @@ class Airfoil(object):
 
         return Airfoil(polars)
 
-    def correction3D(self, r_over_R, chord_over_r, tsr, alpha_max_corr=30, alpha_linear_min=-5, alpha_linear_max=5):
+    def correction3D(
+        self,
+        r_over_R,
+        chord_over_r,
+        tsr,
+        alpha_max_corr=30,
+        alpha_linear_min=-5,
+        alpha_linear_max=5,
+    ):
         """apply 3-D rotational corrections to each polar in airfoil
 
         Parameters
@@ -698,7 +786,12 @@ class Airfoil(object):
         polars = [0] * n
         for idx, p in enumerate(self.polars):
             polars[idx] = p.correction3D(
-                r_over_R, chord_over_r, tsr, alpha_max_corr, alpha_linear_min, alpha_linear_max
+                r_over_R,
+                chord_over_r,
+                tsr,
+                alpha_max_corr,
+                alpha_linear_min,
+                alpha_linear_max,
             )
 
         return Airfoil(polars)
@@ -779,25 +872,45 @@ class Airfoil(object):
         f.write("AeroDyn airfoil file.")
         f.write("Compatible with AeroDyn v13.0.")
         f.write("Generated by airfoilprep.py")
-        f.write("{0:<10d}\t\t{1:40}".format(len(af.polars), "Number of airfoil tables in this file"))
+        f.write(
+            "{0:<10d}\t\t{1:40}".format(
+                len(af.polars), "Number of airfoil tables in this file"
+            )
+        )
         for p in af.polars:
-            f.write("{0:<10f}\t{1:40}".format(p.Re / 1e6, "Reynolds number in millions."))
+            f.write(
+                "{0:<10f}\t{1:40}".format(p.Re / 1e6, "Reynolds number in millions.")
+            )
             param = p.unsteadyparam()
             f.write("{0:<10f}\t{1:40}".format(param[0], "Control setting"))
             f.write("{0:<10f}\t{1:40}".format(param[1], "Stall angle (deg)"))
-            f.write("{0:<10f}\t{1:40}".format(param[2], "Angle of attack for zero Cn for linear Cn curve (deg)"))
-            f.write("{0:<10f}\t{1:40}".format(param[3], "Cn slope for zero lift for linear Cn curve (1/rad)"))
             f.write(
                 "{0:<10f}\t{1:40}".format(
-                    param[4], "Cn at stall value for positive angle of attack for linear Cn curve"
+                    param[2], "Angle of attack for zero Cn for linear Cn curve (deg)"
                 )
             )
             f.write(
                 "{0:<10f}\t{1:40}".format(
-                    param[5], "Cn at stall value for negative angle of attack for linear Cn curve"
+                    param[3], "Cn slope for zero lift for linear Cn curve (1/rad)"
                 )
             )
-            f.write("{0:<10f}\t{1:40}".format(param[6], "Angle of attack for minimum CD (deg)"))
+            f.write(
+                "{0:<10f}\t{1:40}".format(
+                    param[4],
+                    "Cn at stall value for positive angle of attack for linear Cn curve",
+                )
+            )
+            f.write(
+                "{0:<10f}\t{1:40}".format(
+                    param[5],
+                    "Cn at stall value for negative angle of attack for linear Cn curve",
+                )
+            )
+            f.write(
+                "{0:<10f}\t{1:40}".format(
+                    param[6], "Angle of attack for minimum CD (deg)"
+                )
+            )
             f.write("{0:<10f}\t{1:40}".format(param[7], "Minimum CD value"))
             for a, cl, cd, cm in zip(p.alpha, p.cl, p.cd, p.cm):
                 f.write("{:<10f}\t{:<10f}\t{:<10f}\t{:<10f}".format(a, cl, cd, cm))
@@ -836,7 +949,7 @@ class Airfoil(object):
         cd = np.zeros((len(alpha), len(Re)))
         cm = np.zeros((len(alpha), len(Re)))
 
-        for (idx, p) in enumerate(polarList):
+        for idx, p in enumerate(polarList):
             cl[:, idx] = p.cl
             cd[:, idx] = p.cd
             cm[:, idx] = p.cm
@@ -981,19 +1094,29 @@ class Airfoil(object):
 
 
 if __name__ == "__main__":
-
     import os
     from argparse import ArgumentParser, RawTextHelpFormatter
 
     # setup command line arguments
     parser = ArgumentParser(
-        formatter_class=RawTextHelpFormatter, description="Preprocessing airfoil data for wind turbine applications."
+        formatter_class=RawTextHelpFormatter,
+        description="Preprocessing airfoil data for wind turbine applications.",
     )
     parser.add_argument("src_file", type=str, help="source file")
     parser.add_argument(
-        "--stall3D", type=str, nargs=3, metavar=("r/R", "c/r", "tsr"), help="2D data -> apply 3D corrections"
+        "--stall3D",
+        type=str,
+        nargs=3,
+        metavar=("r/R", "c/r", "tsr"),
+        help="2D data -> apply 3D corrections",
     )
-    parser.add_argument("--extrap", type=str, nargs=1, metavar=("cdmax"), help="3D data -> high alpha extrapolations")
+    parser.add_argument(
+        "--extrap",
+        type=str,
+        nargs=1,
+        metavar=("cdmax"),
+        help="3D data -> high alpha extrapolations",
+    )
     parser.add_argument(
         "--blend",
         type=str,
@@ -1002,7 +1125,9 @@ if __name__ == "__main__":
         help="blend 2 files weight 0: sourcefile, weight 1: otherfile",
     )
     parser.add_argument("--out", type=str, help="output file")
-    parser.add_argument("--plot", action="store_true", help="plot data using matplotlib")
+    parser.add_argument(
+        "--plot", action="store_true", help="plot data using matplotlib"
+    )
     parser.add_argument(
         "--common",
         action="store_true",
@@ -1018,7 +1143,6 @@ if __name__ == "__main__":
 
     # perform actions
     if args.stall3D is not None:
-
         if fileOut is None:
             name, ext = os.path.splitext(args.src_file)
             fileOut = name + "_3D" + ext
@@ -1033,7 +1157,6 @@ if __name__ == "__main__":
         af3D.writeToAerodynFile(fileOut)
 
         if args.plot:
-
             for p, p3D in zip(af.polars, af3D.polars):
                 # plt.figure(figsize=(6.0, 2.6))
                 # plt.subplot(121)
@@ -1058,7 +1181,6 @@ if __name__ == "__main__":
             plt.show()
 
     elif args.extrap is not None:
-
         if fileOut is None:
             name, ext = os.path.splitext(args.src_file)
             fileOut = name + "_extrap" + ext
@@ -1073,7 +1195,6 @@ if __name__ == "__main__":
         afext.writeToAerodynFile(fileOut)
 
         if args.plot:
-
             for p, pext in zip(af.polars, afext.polars):
                 # plt.figure(figsize=(6.0, 2.6))
                 # plt.subplot(121)
@@ -1105,7 +1226,6 @@ if __name__ == "__main__":
             plt.show()
 
     elif args.blend is not None:
-
         if fileOut is None:
             name1, ext = os.path.splitext(args.src_file)
             name2, ext = os.path.splitext(os.path.basename(args.blend[0]))
@@ -1121,27 +1241,41 @@ if __name__ == "__main__":
         afOut.writeToAerodynFile(fileOut)
 
         if args.plot:
-
             for p in afOut.polars:
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 plt.plot(p.alpha, p.cl, "k")
                 plt.xlabel("angle of attack (deg)")
                 plt.ylabel("lift coefficient")
-                plt.text(0.6, 0.2, "Re = " + str(p.Re / 1e6) + " million", transform=ax.transAxes)
+                plt.text(
+                    0.6,
+                    0.2,
+                    "Re = " + str(p.Re / 1e6) + " million",
+                    transform=ax.transAxes,
+                )
 
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 plt.plot(p.alpha, p.cd, "k")
                 plt.xlabel("angle of attack (deg)")
                 plt.ylabel("drag coefficient")
-                plt.text(0.2, 0.8, "Re = " + str(p.Re / 1e6) + " million", transform=ax.transAxes)
+                plt.text(
+                    0.2,
+                    0.8,
+                    "Re = " + str(p.Re / 1e6) + " million",
+                    transform=ax.transAxes,
+                )
 
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 plt.plot(p.alpha, p.cm, "k")
                 plt.xlabel("angle of attack (deg)")
                 plt.ylabel("moment coefficient")
-                plt.text(0.2, 0.8, "Re = " + str(p.Re / 1e6) + " million", transform=ax.transAxes)
+                plt.text(
+                    0.2,
+                    0.8,
+                    "Re = " + str(p.Re / 1e6) + " million",
+                    transform=ax.transAxes,
+                )
 
             plt.show()

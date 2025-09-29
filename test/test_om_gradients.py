@@ -4,7 +4,12 @@ import unittest
 import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
-from ccblade.ccblade_component import CCBladeLoads, CCBladeTwist, CCBladeEvaluate, CCBladeGeometry
+from ccblade.ccblade_component import (
+    CCBladeLoads,
+    CCBladeTwist,
+    CCBladeEvaluate,
+    CCBladeGeometry,
+)
 
 np.random.seed(314)
 
@@ -36,7 +41,10 @@ class Test(unittest.TestCase):
 
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(
-            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+            os.path.dirname(os.path.abspath(__file__))
+            + os.path.sep
+            + "smaller_dataset.npz",
+            allow_pickle=True,
         )
 
         n_span = npzfile["r"].size
@@ -51,7 +59,9 @@ class Test(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
         modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
 
-        n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
+        n_span, n_aoa, n_Re, n_tab = np.moveaxis(
+            npzfile["cl"][:, :, :, np.newaxis], 0, 1
+        ).shape
         modeling_options["airfoils"] = {}
         modeling_options["airfoils"]["n_aoa"] = n_aoa
         modeling_options["airfoils"]["n_Re"] = n_Re
@@ -65,9 +75,15 @@ class Test(unittest.TestCase):
         # Add some arbitrary inputs
         prob.set_val("airfoils_aoa", npzfile["aoa"], units="deg")
         prob.set_val("airfoils_Re", npzfile["Re"])
-        prob.set_val("airfoils_cl", np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1))
-        prob.set_val("airfoils_cd", np.moveaxis(npzfile["cd"][:, :, :, np.newaxis], 0, 1))
-        prob.set_val("airfoils_cm", np.moveaxis(npzfile["cm"][:, :, :, np.newaxis], 0, 1))
+        prob.set_val(
+            "airfoils_cl", np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1)
+        )
+        prob.set_val(
+            "airfoils_cd", np.moveaxis(npzfile["cd"][:, :, :, np.newaxis], 0, 1)
+        )
+        prob.set_val(
+            "airfoils_cm", np.moveaxis(npzfile["cm"][:, :, :, np.newaxis], 0, 1)
+        )
         prob.set_val("r", npzfile["r"], units="m")
         prob.set_val("chord", npzfile["chord"], units="m")
         prob.set_val("theta", npzfile["theta"], units="deg")
@@ -106,11 +122,17 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
-                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
-                    new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
+            for output_name, input_name in check[comp_name]:
+                if (
+                    "airfoil" not in input_name
+                    and "rho" not in input_name
+                    and "mu" not in input_name
+                ):
+                    new_check[comp_name][(output_name, input_name)] = check[comp_name][
+                        (output_name, input_name)
+                    ]
 
-        assert_check_partials(new_check, rtol=5e-5, atol=10.)
+        assert_check_partials(new_check, rtol=5e-5, atol=10.0)
 
     @unittest.skip("Not useful and now OpenMDAO complains")
     def test_ccblade_twist(self):
@@ -124,7 +146,10 @@ class Test(unittest.TestCase):
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(
-            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+            os.path.dirname(os.path.abspath(__file__))
+            + os.path.sep
+            + "smaller_dataset.npz",
+            allow_pickle=True,
         )
         n_span = npzfile["r"].size
         n_aoa = npzfile["aoa"].size
@@ -141,7 +166,9 @@ class Test(unittest.TestCase):
         modeling_options["assembly"] = {}
         modeling_options["assembly"]["number_of_blades"] = 3
 
-        n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
+        n_span, n_aoa, n_Re, n_tab = np.moveaxis(
+            npzfile["cl"][:, :, :, np.newaxis], 0, 1
+        ).shape
         modeling_options["airfoils"] = {}
         modeling_options["airfoils"]["n_aoa"] = n_aoa
         modeling_options["airfoils"]["n_Re"] = n_Re
@@ -155,7 +182,9 @@ class Test(unittest.TestCase):
         opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 8
         opt_options["design_variables"]["blade"]["aero_shape"]["twist"] = {}
         opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 8
-        opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"] = False
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"] = (
+            False
+        )
         opt_options["constraints"] = {}
         opt_options["constraints"]["blade"] = {}
         opt_options["constraints"]["blade"]["stall"] = {}
@@ -168,9 +197,15 @@ class Test(unittest.TestCase):
 
         prob.set_val("airfoils_aoa", npzfile["aoa"], units="deg")
         prob.set_val("airfoils_Re", npzfile["Re"])
-        prob.set_val("airfoils_cl", np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1))
-        prob.set_val("airfoils_cd", np.moveaxis(npzfile["cd"][:, :, :, np.newaxis], 0, 1))
-        prob.set_val("airfoils_cm", np.moveaxis(npzfile["cm"][:, :, :, np.newaxis], 0, 1))
+        prob.set_val(
+            "airfoils_cl", np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1)
+        )
+        prob.set_val(
+            "airfoils_cd", np.moveaxis(npzfile["cd"][:, :, :, np.newaxis], 0, 1)
+        )
+        prob.set_val(
+            "airfoils_cm", np.moveaxis(npzfile["cm"][:, :, :, np.newaxis], 0, 1)
+        )
         prob.set_val("r", npzfile["r"], units="m")
         prob.set_val("chord", npzfile["chord"], units="m")
 
@@ -202,9 +237,11 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
-                if not input_name in ["airfoil", "rho", "mu"]:
-                    new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
+            for output_name, input_name in check[comp_name]:
+                if input_name not in ["airfoil", "rho", "mu"]:
+                    new_check[comp_name][(output_name, input_name)] = check[comp_name][
+                        (output_name, input_name)
+                    ]
 
         assert_check_partials(new_check)  # , rtol=5e-5, atol=1e-4)
 
@@ -215,7 +252,10 @@ class Test(unittest.TestCase):
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(
-            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+            os.path.dirname(os.path.abspath(__file__))
+            + os.path.sep
+            + "smaller_dataset.npz",
+            allow_pickle=True,
         )
         n_span = npzfile["r"].size
         n_aoa = npzfile["aoa"].size
@@ -232,7 +272,9 @@ class Test(unittest.TestCase):
         modeling_options["assembly"] = {}
         modeling_options["assembly"]["number_of_blades"] = 3
 
-        n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
+        n_span, n_aoa, n_Re, n_tab = np.moveaxis(
+            npzfile["cl"][:, :, :, np.newaxis], 0, 1
+        ).shape
         modeling_options["airfoils"] = {}
         modeling_options["airfoils"]["n_aoa"] = n_aoa
         modeling_options["airfoils"]["n_Re"] = n_Re
@@ -245,9 +287,15 @@ class Test(unittest.TestCase):
 
         prob.set_val("airfoils_aoa", npzfile["aoa"], units="deg")
         prob.set_val("airfoils_Re", npzfile["Re"])
-        prob.set_val("airfoils_cl", np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1))
-        prob.set_val("airfoils_cd", np.moveaxis(npzfile["cd"][:, :, :, np.newaxis], 0, 1))
-        prob.set_val("airfoils_cm", np.moveaxis(npzfile["cm"][:, :, :, np.newaxis], 0, 1))
+        prob.set_val(
+            "airfoils_cl", np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1)
+        )
+        prob.set_val(
+            "airfoils_cd", np.moveaxis(npzfile["cd"][:, :, :, np.newaxis], 0, 1)
+        )
+        prob.set_val(
+            "airfoils_cm", np.moveaxis(npzfile["cm"][:, :, :, np.newaxis], 0, 1)
+        )
         prob.set_val("r", npzfile["r"], units="m")
         prob.set_val("chord", npzfile["chord"], units="m")
         prob.set_val("theta", npzfile["theta"], units="deg")
@@ -287,11 +335,17 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
-                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
-                    new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
+            for output_name, input_name in check[comp_name]:
+                if (
+                    "airfoil" not in input_name
+                    and "rho" not in input_name
+                    and "mu" not in input_name
+                ):
+                    new_check[comp_name][(output_name, input_name)] = check[comp_name][
+                        (output_name, input_name)
+                    ]
 
-        assert_check_partials(new_check, rtol=5e-4, atol=50.)
+        assert_check_partials(new_check, rtol=5e-4, atol=50.0)
 
 
 def suite():

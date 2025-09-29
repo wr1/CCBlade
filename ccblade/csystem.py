@@ -107,7 +107,7 @@ class DirectionVector(object):
 
         angles = []
         for key in dx.keys():
-            if not key in ["dx", "dy", "dz"]:
+            if key not in ["dx", "dy", "dz"]:
                 angles.append(key)
 
         dxnew = {}
@@ -127,7 +127,9 @@ class DirectionVector(object):
             dynew[dangle] = -dx[dangle] * s + dy[dangle] * c
 
         dznew = {}
-        dznew["dx"] = dz["dx"] * np.ones_like(theta)  # multiply by ones just to get right size in case of float
+        dznew["dx"] = dz["dx"] * np.ones_like(
+            theta
+        )  # multiply by ones just to get right size in case of float
         dznew["dy"] = dz["dy"] * np.ones_like(theta)
         dznew["dz"] = dz["dz"] * np.ones_like(theta)
         dznew["d" + thetaname] = np.zeros_like(theta)
@@ -150,7 +152,9 @@ class DirectionVector(object):
             a DirectionVector in the inertial coordinate system
 
         """
-        xw, yw, zw, dxw, dyw, dzw = self._rotateAboutZ("x", "y", "z", beta, "beta", reverse=True)
+        xw, yw, zw, dxw, dyw, dzw = self._rotateAboutZ(
+            "x", "y", "z", beta, "beta", reverse=True
+        )
         return DirectionVector(xw, yw, zw, dxw, dyw, dzw)
 
     def inertialToWind(self, beta):
@@ -184,7 +188,9 @@ class DirectionVector(object):
             a DirectionVector in the wind-aligned coordinate system
 
         """
-        xw, yw, zw, dxw, dyw, dzw = self._rotateAboutZ("x", "y", "z", Psi, "yaw", reverse=True)
+        xw, yw, zw, dxw, dyw, dzw = self._rotateAboutZ(
+            "x", "y", "z", Psi, "yaw", reverse=True
+        )
         return DirectionVector(xw, yw, zw, dxw, dyw, dzw)
 
     def windToYaw(self, Psi):
@@ -218,7 +224,9 @@ class DirectionVector(object):
             a DirectionVector in the yaw-aligned coordinate system
 
         """
-        zy, xy, yy, dzy, dxy, dyy = self._rotateAboutZ("z", "x", "y", Theta, "tilt", reverse=True)
+        zy, xy, yy, dzy, dxy, dyy = self._rotateAboutZ(
+            "z", "x", "y", Theta, "tilt", reverse=True
+        )
         return DirectionVector(xy, yy, zy, dxy, dyy, dzy)
 
     def yawToHub(self, Theta):
@@ -270,7 +278,9 @@ class DirectionVector(object):
 
         """
 
-        yh, zh, xh, dyh, dzh, dxh = self._rotateAboutZ("y", "z", "x", Lambda, "azimuth", reverse=True)
+        yh, zh, xh, dyh, dzh, dxh = self._rotateAboutZ(
+            "y", "z", "x", Lambda, "azimuth", reverse=True
+        )
         return DirectionVector(xh, yh, zh, dxh, dyh, dzh)
 
     def azimuthToBlade(self, Phi):
@@ -288,7 +298,9 @@ class DirectionVector(object):
 
         """
 
-        zb, xb, yb, dzb, dxb, dyb = self._rotateAboutZ("z", "x", "y", Phi, "precone", reverse=True)
+        zb, xb, yb, dzb, dxb, dyb = self._rotateAboutZ(
+            "z", "x", "y", Phi, "precone", reverse=True
+        )
         return DirectionVector(xb, yb, zb, dxb, dyb, dzb)
 
     def bladeToAzimuth(self, Phi):
@@ -343,7 +355,9 @@ class DirectionVector(object):
 
         """
 
-        xa, ya, za, dxa, dya, dza = self._rotateAboutZ("x", "y", "z", theta, "theta", reverse=True)
+        xa, ya, za, dxa, dya, dza = self._rotateAboutZ(
+            "x", "y", "z", theta, "theta", reverse=True
+        )
         return DirectionVector(xa, ya, za, dxa, dya, dza)
 
     def airfoilToProfile(self):
@@ -415,7 +429,6 @@ class DirectionVector(object):
         return dx, dy, dz
 
     def cross_deriv_array(self, other, namea="a", nameb="b"):
-
         # c = a X b
         a = self
         b = other
@@ -492,7 +505,6 @@ class DirectionVector(object):
             self.x -= other
             self.y -= other
             self.z -= other
-
         return self
 
     def __mul__(self, other):
@@ -509,7 +521,9 @@ class DirectionVector(object):
         if isinstance(other, DirectionVector):
             return DirectionVector(self.x / other.x, self.y / other.y, self.z / other.z)
         else:
-            return DirectionVector(self.x / float(other), self.y / float(other), self.z / float(other))
+            return DirectionVector(
+                self.x / float(other), self.y / float(other), self.z / float(other)
+            )
 
     def __imul__(self, other):
         """multiply self times a scalar or element by element muiltiply times another vector (v1 *= alpha or v1 *= v2)"""

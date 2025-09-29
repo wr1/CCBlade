@@ -29,6 +29,7 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 
 from .bem import *
+from .airfoilprep import Airfoil
 
 # ------------------
 #  Airfoil Class
@@ -580,9 +581,9 @@ class CCBlade(object):
         self.B = B
         self.rho = rho
         self.mu = mu
-        self.precone = float(np.deg2rad(precone))
-        self.tilt = float(np.deg2rad(tilt))
-        self.yaw = float(np.deg2rad(yaw))
+        self.precone = np.deg2rad(precone).item()
+        self.tilt = np.deg2rad(tilt).item()
+        self.yaw = np.deg2rad(yaw).item()
         self.shearExp = shearExp
         self.hubHt = hubHt
         self.bemoptions = dict(
@@ -910,6 +911,7 @@ class CCBlade(object):
         """x, y components of wind in blade-aligned coordinate system"""
 
         Vx, Vy = windcomponents(
+            len(self.r),
             self.r,
             self.precurve,
             self.presweep,
@@ -929,8 +931,10 @@ class CCBlade(object):
         # y = [r, precurve, presweep, precone, tilt, hubHt, yaw, shear, azimuth, Uinf, Omega]  (derivative order)
         n = len(self.r)
         dy_dy = np.eye(3 * n + 8)
+        nbdirs = dy_dy.shape[0]
 
-        _, Vxd, _, Vyd = windcomponents_dv(
+        Vx, Vxd, Vy, Vyd = windcomponents_dv(
+            len(self.r),
             self.r,
             dy_dy[:, :n],
             self.precurve,
@@ -953,6 +957,11 @@ class CCBlade(object):
             dy_dy[:, 3 * n + 2],
             self.shearExp,
             dy_dy[:, 3 * n + 4],
+            Vx,
+            Vxd,
+            Vy,
+            Vyd,
+            nbdirs,
         )
 
         dVx_dr = np.diag(
@@ -1026,7 +1035,7 @@ class CCBlade(object):
         """
 
         self.pitch = np.deg2rad(pitch)
-        azimuth = np.deg2rad(azimuth)
+        azimuth = np.rad2deg(azimuth)
 
         # component of velocity at each radial station
         Vx, Vy, dVx_dw, dVy_dw, dVx_dcurve, dVy_dcurve = self.__windComponents(
@@ -1400,7 +1409,7 @@ class CCBlade(object):
                 )
                 Np, Tp, W = (loads["Np"], loads["Tp"], loads["W"])
 
-                Tsub, Ysub, Zsub, Qsub, Msub = thrusttorque(Np, Tp, *args)
+                Tsub, Ysub, Zsub, Qsub, Msub = thrusttorque(len(self.r), Np, Tp, *args)
 
                 # Scale rotor quantities (thrust & torque) by num blades.  Keep blade root moment as is
                 T[i] += self.B * Tsub / nsec
@@ -1577,7 +1586,7 @@ class CCBlade(object):
                         - dR_ds.T / self.rotorR
                     )
                 ).T
-                dCMb_dv = (dMb_dv.T / (q * self.rotorR * A)).T
+                dCMb_dv = (dCMb_dv.T / (q * self.rotorR * A)).T
 
                 dCP_ds = (
                     CP
