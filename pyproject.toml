@@ -72,6 +72,9 @@ dev = ["pytest"]
 [project.urls]  # Optional
 "Homepage" = "https://github.com/WISDEM/CCBlade"
 
+[project.scripts]
+ccblade-cli = "ccblade.cli.main:main"
+
 [tool.black]
 line-length = 120
 target-version = ['py39']
