@@ -131,7 +131,7 @@ for i in range(len(r)):
 airfoil_obj = Airfoil.initFromAerodynFile(os.path.join(basepath, "DU40_A17.dat"))
 figs = airfoil_obj.plot()
 for i, fig in enumerate(figs):
-    filename = f'airfoil_plot_{i}.png'
+    filename = f"airfoil_plot_{i}.png"
     fig.savefig(filename)
     logger.info(f"Saved airfoil plot to {filename}")
 
@@ -179,7 +179,7 @@ Tp = loads.Tp
 # 5 ----------
 
 # plot
-plt.figure()
+plt.figure(figsize=(10, 6))
 rstar = (r - Rhub) / (Rtip - Rhub)
 
 # append zero at root and tip
@@ -193,7 +193,7 @@ plt.xlabel("blade fraction")
 plt.ylabel("distributed aerodynamic loads (kN)")
 plt.legend(loc="upper left")
 plt.grid()
-filename = 'loads_plot.png'
+filename = "loads_plot.png"
 plt.savefig(filename)
 logger.info(f"Saved loads plot to {filename}")
 # 5 ----------
@@ -230,11 +230,11 @@ CT = outputs.CT
 CQ = outputs.CQ
 
 
-plt.figure()
+plt.figure(figsize=(10, 6))
 plt.plot(tsr, CP)
 plt.xlabel(r"$\lambda$")
 plt.ylabel(r"$c_p$")
-filename = 'cp_plot.png'
+filename = "cp_plot.png"
 plt.savefig(filename)
 logger.info(f"Saved CP plot to {filename}")
 # 7 ----------
