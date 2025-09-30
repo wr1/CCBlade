@@ -18,6 +18,7 @@ import numpy as np
 
 from ccblade import CCAirfoil, CCBlade
 from ccblade.airfoil.airfoil import Airfoil
+from ccblade.core.plotting import plot_power_thrust, plot_omega_pitch
 
 # geometry
 Rhub = 1.5
@@ -131,7 +132,7 @@ for i in range(len(r)):
 airfoil_obj = Airfoil.initFromAerodynFile(os.path.join(basepath, "DU40_A17.dat"))
 figs = airfoil_obj.plot()
 for i, fig in enumerate(figs):
-    filename = f"airfoil_plot_{i}.png"
+    filename = f'airfoil_plot_{i}.png'
     fig.savefig(filename)
     logger.info(f"Saved airfoil plot to {filename}")
 
@@ -179,7 +180,7 @@ Tp = loads.Tp
 # 5 ----------
 
 # plot
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(10,6))
 rstar = (r - Rhub) / (Rtip - Rhub)
 
 # append zero at root and tip
@@ -193,7 +194,7 @@ plt.xlabel("blade fraction")
 plt.ylabel("distributed aerodynamic loads (kN)")
 plt.legend(loc="upper left")
 plt.grid()
-filename = "loads_plot.png"
+filename = 'loads_plot.png'
 plt.savefig(filename)
 logger.info(f"Saved loads plot to {filename}")
 # 5 ----------
@@ -230,11 +231,27 @@ CT = outputs.CT
 CQ = outputs.CQ
 
 
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(10,6))
 plt.plot(tsr, CP)
 plt.xlabel(r"$\lambda$")
 plt.ylabel(r"$c_p$")
-filename = "cp_plot.png"
+plt.grid()
+max_cp = np.max(CP)
+idx = np.argmax(CP)
+lambda_max = tsr[idx]
+plt.axvline(x=lambda_max, color='r', linestyle='--')
+plt.annotate(f'λ={lambda_max:.2f}, CP={max_cp:.3f}', xy=(lambda_max, max_cp), xytext=(lambda_max+1, max_cp-0.1), arrowprops=dict(arrowstyle='->'))
+filename = 'cp_plot.png'
 plt.savefig(filename)
 logger.info(f"Saved CP plot to {filename}")
+
+# Plot power and thrust
+fig = plot_power_thrust(outputs, tsr, r'$\lambda$')
+fig.savefig('power_thrust_plot.png')
+logger.info("Saved power and thrust plot to power_thrust_plot.png")
+
+# Plot omega and pitch over Uinf
+fig = plot_omega_pitch(Uinf, Omega, pitch)
+fig.savefig('omega_pitch_plot.png')
+logger.info("Saved omega and pitch plot to omega_pitch_plot.png")
 # 7 ----------

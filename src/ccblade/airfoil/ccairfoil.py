@@ -57,7 +57,6 @@ class CCAirfoil:
     @classmethod
     def initFromAerodynFile(cls, aerodynFile):
         """Construct from AeroDyn file."""
-        logger.info(f"Loading airfoil file: {aerodynFile}")
         af = Airfoil.initFromAerodynFile(aerodynFile)
         alpha, Re, cl, cd, cm = af.createDataGrid()
         return cls(alpha, Re, cl, cd, cm=cm)

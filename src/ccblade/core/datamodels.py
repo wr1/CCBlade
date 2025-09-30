@@ -17,6 +17,33 @@ class BladeLoads(BaseModel):
     Re: list[float]
 
 
+class RotorGeometry(BaseModel):
+    """Data model for rotor geometry."""
+    r: list[float]
+    chord: list[float]
+    theta: list[float]
+    Rhub: float
+    Rtip: float
+    B: int
+    rho: float
+    mu: float
+    precone: float
+    tilt: float
+    yaw: float
+    shearExp: float
+    hubHt: float
+    nSector: int
+    precurve: list[float] = None
+    precurveTip: float = 0.0
+    presweep: list[float] = None
+    presweepTip: float = 0.0
+    tiploss: bool = True
+    hubloss: bool = True
+    wakerotation: bool = True
+    usecd: bool = True
+    iterRe: int = 1
+
+
 class RotorOutputs(BaseModel):
     """Data model for rotor outputs."""
     P: list[float]

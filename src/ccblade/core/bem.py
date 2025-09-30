@@ -91,14 +91,14 @@ def definecurvature(n_stations, r, precurve, presweep, precone):
             np.arctan2(-(x_az[i] - x_az[i - 1]), z_az[i] - z_az[i - 1])
             + np.arctan2(-(x_az[i + 1] - x_az[i]), z_az[i + 1] - z_az[i])
         )
-    cone[n_stations - 1] = np.arctan2(-(x_az[n_stations - 1] - x_az[n_stations - 2]), z_az[n_stations - 1] - z_az[n_stations - 2])
+    cone[n_stations - 1] = np.arctan2(
+        -(x_az[n_stations - 1] - x_az[n_stations - 2]), z_az[n_stations - 1] - z_az[n_stations - 2]
+    )
     s = np.zeros(n_stations)
     s[0] = 0.0
     for i in range(1, n_stations):
         s[i] = s[i - 1] + np.sqrt(
-            (precurve[i] - precurve[i - 1]) ** 2
-            + (presweep[i] - presweep[i - 1]) ** 2
-            + (r[i] - r[i - 1]) ** 2
+            (precurve[i] - precurve[i - 1]) ** 2 + (presweep[i] - presweep[i - 1]) ** 2 + (r[i] - r[i - 1]) ** 2
         )
     return x_az, y_az, z_az, cone, s
 
@@ -140,16 +140,16 @@ def windcomponents(
     return vx, vy
 
 
-def thrusttorque(n_stations, normal_force, tangential_force, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip):
+def thrusttorque(
+    n_stations, normal_force, tangential_force, r, precurve, presweep, precone, rhub, rtip, precurvetip, presweeptip
+):
     """Integrate thrust and torque."""
     rfull = np.concatenate([[rhub], r, [rtip]])
     curvefull = np.concatenate([[0.0], precurve, [precurvetip]])
     sweepfull = np.concatenate([[0.0], presweep, [presweeptip]])
     Npfull = np.concatenate([[0.0], normal_force, [0.0]])
     Tpfull = np.concatenate([[0.0], tangential_force, [0.0]])
-    x_az, y_az, z_az, cone, s = definecurvature(
-        n_stations + 2, rfull, curvefull, sweepfull, precone
-    )
+    x_az, y_az, z_az, cone, s = definecurvature(n_stations + 2, rfull, curvefull, sweepfull, precone)
     thrust = Npfull * np.cos(cone)
     side_force = Tpfull
     vert_force = Npfull * np.sin(cone)

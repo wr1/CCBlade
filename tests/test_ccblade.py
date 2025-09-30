@@ -308,28 +308,25 @@ class TestNREL5MW(unittest.TestCase):
         m_rotor = 110.0  # kg
         g = 9.81
         tilt = 5 * math.pi / 180.0
-        Tref -= (
-            m_rotor * g * math.sin(tilt)
-        )  # remove weight of rotor that is included in reported results
+        Tref -= m_rotor * g * math.sin(tilt)  # remove weight of rotor that is included in reported results
 
         outputs = self.rotor.evaluate(Uinf, Omega, pitch)
         P = np.array(outputs.P)
         T = np.array(outputs.T)
         Q = np.array(outputs.Q)
 
-        # import matplotlib.pyplot as plt
-        # plt.plot(Uinf, P/1e6, 'b-')
-        # plt.plot(Uinf, Pref/1e3, 'b--')
-        # plt.figure()
-        # plt.plot(Uinf, T/1e6, 'g')
-        # plt.plot(Uinf, Tref/1e3, 'g--')
-        # plt.show()
+        import matplotlib.pyplot as plt
+
+        plt.plot(Uinf, P / 1e6, "b-")
+        plt.plot(Uinf, Pref / 1e3, "b--")
+        plt.figure()
+        plt.plot(Uinf, T / 1e6, "g")
+        plt.plot(Uinf, Tref / 1e3, "g--")
+        plt.show()
 
         idx = Uinf < 15
         np.testing.assert_allclose(Q[idx] / 1e6, Qref[idx] / 1e3, atol=0.15)
-        np.testing.assert_allclose(
-            P[idx] / 1e6, Pref[idx] / 1e3, atol=0.2
-        )  # within 0.2 of 1MW
+        np.testing.assert_allclose(P[idx] / 1e6, Pref[idx] / 1e3, atol=0.2)  # within 0.2 of 1MW
         np.testing.assert_allclose(T[idx] / 1e6, Tref[idx] / 1e3, atol=0.15)
 
 
