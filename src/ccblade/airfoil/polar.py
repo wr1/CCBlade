@@ -71,8 +71,30 @@ class Polar:
         alpha0 = -p[1] / m
 
         # correction factor
-        fcl = 1.0 / m * (1.6 * chord_to_radius_ratio / 0.1267 * (a - chord_to_radius_ratio**expon) / (b + chord_to_radius_ratio**expon) - 1)
-        fcd = 1.0 / m * (1.6 * chord_to_radius_ratio / 0.1267 * (a - chord_to_radius_ratio**expon_d) / (b + chord_to_radius_ratio**expon_d) - 1)
+        fcl = (
+            1.0
+            / m
+            * (
+                1.6
+                * chord_to_radius_ratio
+                / 0.1267
+                * (a - chord_to_radius_ratio**expon)
+                / (b + chord_to_radius_ratio**expon)
+                - 1
+            )
+        )
+        fcd = (
+            1.0
+            / m
+            * (
+                1.6
+                * chord_to_radius_ratio
+                / 0.1267
+                * (a - chord_to_radius_ratio**expon_d)
+                / (b + chord_to_radius_ratio**expon_d)
+                - 1
+            )
+        )
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
         adj = ((np.pi / 2 - alpha) / (np.pi / 2 - alpha_max_corr)) ** 2
@@ -359,7 +381,7 @@ class Polar:
         figs = []
 
         # plot cl
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10, 6))
         figs.append(fig)
         ax = fig.add_subplot(111)
         plt.plot(p.alpha, p.cl, label="Re = " + str(p.Re / 1e6) + " million")
@@ -369,7 +391,7 @@ class Polar:
         ax.grid()
 
         # plot cd
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10, 6))
         figs.append(fig)
         ax = fig.add_subplot(111)
         ax.plot(p.alpha, p.cd, label="Re = " + str(p.Re / 1e6) + " million")
@@ -379,7 +401,7 @@ class Polar:
         ax.grid()
 
         # plot cm
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10, 6))
         figs.append(fig)
         ax = fig.add_subplot(111)
         ax.plot(p.alpha, p.cm, label="Re = " + str(p.Re / 1e6) + " million")
