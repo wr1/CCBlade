@@ -151,8 +151,9 @@ rotor = CCBlade(
 
 # 1 ----------
 
+plt.figure(figsize=(10, 6))
 plt.plot(precurve, r, "k")
 plt.plot(precurve, -r, "k")
 plt.axis("equal")
 plt.grid()
-plt.savefig('rotorshape.png')
+plt.savefig("rotorshape.png")
