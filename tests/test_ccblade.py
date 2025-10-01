@@ -18,8 +18,8 @@ from os import path
 
 import numpy as np
 
-from ccblade.airfoil.ccairfoil import CCAirfoil
-from ccblade.core.ccblade import CCBlade
+from ccblite.airfoil.ccairfoil import CCAirfoil
+from ccblite.core.ccblade import CCBlade
 
 
 class TestNREL5MW(unittest.TestCase):

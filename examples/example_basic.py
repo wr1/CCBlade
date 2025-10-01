@@ -16,9 +16,9 @@ from math import pi
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ccblade import CCAirfoil, CCBlade
-from ccblade.airfoil.airfoil import Airfoil
-from ccblade.core.plotting import plot_power_thrust, plot_omega_pitch
+from ccblite import CCAirfoil, CCBlade
+from ccblite.airfoil.airfoil import Airfoil
+from ccblite.core.plotting import plot_power_thrust, plot_omega_pitch
 
 # geometry
 Rhub = 1.5

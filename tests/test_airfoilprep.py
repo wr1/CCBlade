@@ -3,7 +3,7 @@ from math import pi
 
 import numpy as np
 
-from ccblade.airfoil.airfoil import Airfoil, Polar
+from ccblite.airfoil.airfoil import Airfoil, Polar
 
 
 class TestBlend(unittest.TestCase):

@@ -1,16 +1,16 @@
-"""CCBlade CLI"""
+"""CCBlite CLI"""
 
 import argparse
 import os
 
 import numpy as np
 
-from ccblade import CCAirfoil, CCBlade
+from ccblite import CCAirfoil, CCBlade
 
 
 def main():
-    parser = argparse.ArgumentParser(description="CCBlade CLI")
-    parser.add_argument("-u", "--u", type=float, default=10.0, help="Wind speed Uinf")
+    parser = argparse.ArgumentParser(description="CCBlite CLI")
+    parser.add_argument("-u", "--wind-speed", type=float, default=10.0, help="Wind speed Uinf")
     parser.add_argument("-o", "--omega", type=float, default=12.1, help="Rotor speed Omega in RPM")
     parser.add_argument("-p", "--pitch", type=float, default=0.0, help="Pitch angle in degrees")
     parser.add_argument("-f", "--file", type=str, help="Airfoil file path")

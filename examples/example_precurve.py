@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ccblade import CCAirfoil, CCBlade
+from ccblite import CCAirfoil, CCBlade
 
 # geometry
 Rhub = 1.5
